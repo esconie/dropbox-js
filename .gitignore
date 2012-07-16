@@ -1,0 +1,12 @@
+# Vim.
+*.swp
+
+# Npm modules.
+node_modules
+
+# Build output.
+lib/dropbox.js
+lib/dropbox.min.js
+test/js
+tmp/*.js
+
