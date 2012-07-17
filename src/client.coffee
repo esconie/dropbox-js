@@ -175,11 +175,11 @@ class DropboxClient
   #     being edited)
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  putFiles: (root, path, body, locale, overwrite, parent_rev, callback) ->
+  putFiles: (root, path, body, locale, overwrite, parentRev, callback) ->
     url = "#{@urls.putFiles}/#{root}/#{path}"
     params = {}
-    if parent_rev?
-        params['parent_rev'] = parent_rev
+    if parentRev?
+        params['parent_rev'] = parentRev
     if locale?
         params['locale'] = locale
     if overwrite?
@@ -202,6 +202,7 @@ class DropboxClient
   postFiles: (root, path, file, locale, overwrite, parent_rev, callback) ->
     url - "#{@urls.putFiles}/#{root}/#{path}"
     authorize = @oauth.authHeader 'POST', url, {}
+    null
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -217,10 +218,23 @@ class DropboxClient
   # @param {String} locale
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  metadata: (root, path, file_limit, hash, list, include_deleted, rev, locale, callback) ->
+  metadata: (root, path, fileLimit, hash, list, includeDeleted, rev, locale, callback) ->
     url = "#{@urls.metadata}/#{root}/#{path}"  
-    authorize = @oauth.authHeader 'GET', url, {}
-
+    params = {}
+    if fileLimit?
+        params['file_limit'] = fileLimit
+    if hash?
+        params['hash'] = hash
+    if list?
+        params['list'] = list
+    if includeDeleted?
+        params['include_deleted'] = includeDeleted
+    if rev?
+        params['rev'] = rev
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
 
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 

@@ -26,19 +26,26 @@ describe 'DropboxClient', ->
         done()
 
   describe 'getFiles', ->
-    it 'reads a file to the test account Dropbox', (done) ->
+    it 'reads a file from Dropbox', (done) ->
       @client.getFiles 'dropbox', 'api-test.txt', undefined, (file, error) ->
         expect(error).to.not.be.ok
         expect(file).to.equal "This is the api secret\n"
         done()
 
   describe 'putFiles', ->
-    it 'writes a file to the test account Dropbox', (done) ->
+    it 'writes a file to Dropbox', (done) ->
       callback = (metadata, error) ->
         expect(error).to.not.be.ok
         metadata = JSON.parse(metadata)
-        expect(metadata.path).to.equal "/api-write-test.txt"
+        expect(metadata.path).to.equal '/api-write-test.txt'
         done() 
       @client.putFiles 'dropbox', 'api-write-test.txt',
                        'This is not the api secret', undefined, true,
                        undefined, callback
+
+  describe 'metadata', ->
+    it 'retrieves file metadata', (done) ->
+      @client.metadata 'dropbox', 'api-test.txt', undefined, undefined, undefined, undefined, undefined, undefined, (metadata, error) ->
+        metadata = JSON.parse(metadata)
+        expect(metadata.path).to.equal '/api-test.txt'
+        done()
