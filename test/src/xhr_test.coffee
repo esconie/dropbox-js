@@ -6,9 +6,9 @@ describe 'DropboxXhr', ->
         {},
         'OAuth ',
         (data, error) ->
-          assert.strictEqual data, null
-          assert.ok error
-          error.should.match /^Dropbox API error/
+          expect(data).to.equal null
+          expect(error).to.be.a 'string'
+          expect(error).to.match /^Dropbox API error/
           done()
         )
 
@@ -23,28 +23,27 @@ describe 'DropboxXhr', ->
         {},
         oauth_header,
         (data, error) ->
-          assert.strictEqual error, undefined
-          assert.ok data
-          assert.ok data.oauth_token
-          assert.ok data.oauth_token_secret
+          expect(error).to.equal undefined
+          expect(data).to.have.property 'oauth_token'
+          expect(data).to.have.property 'oauth_token_secret'
           done()
         )
 
 
   describe '#urlEncode', ->
     it 'iterates properly', ->
-      Dropbox.Xhr.urlEncode({foo: 'bar', baz: 5}).should.
+      expect(Dropbox.Xhr.urlEncode({foo: 'bar', baz: 5})).to.
         equal 'baz=5&foo=bar' 
     it 'percent-encodes properly', ->
-      Dropbox.Xhr.urlEncode({'a +x()': "*b'"}).should.
+      expect(Dropbox.Xhr.urlEncode({'a +x()': "*b'"})).to.
         equal 'a%20%2Bx%28%29=%2Ab%27' 
 
   describe '#urlDecode', ->
     it 'iterates properly', ->
       decoded = Dropbox.Xhr.urlDecode('baz=5&foo=bar')
-      decoded['baz'].should.equal '5' 
-      decoded['foo'].should.equal 'bar' 
+      expect(decoded['baz']).to.equal '5' 
+      expect(decoded['foo']).to.equal 'bar' 
     it 'percent-decodes properly', ->
       decoded = Dropbox.Xhr.urlDecode('a%20%2Bx%28%29=%2Ab%27')
-      decoded['a +x()'].should.equal "*b'"
+      expect(decoded['a +x()']).to.equal "*b'"
 

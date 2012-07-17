@@ -14,16 +14,16 @@ describe 'DropboxClient', ->
         secret: testKeys.secret,
         server: 'https://api.sandbox.dropbox-proxy.com'
 
-      client.apiServer.should.equal(
+      expect(client.apiServer).to.equal(
         'https://api.sandbox.dropbox-proxy.com')
-      client.authServer.should.equal(
+      expect(client.authServer).to.equal(
         'https://www.sandbox.dropbox-proxy.com')
-      client.fileServer.should.equal(
+      expect(client.fileServer).to.equal(
         'https://api-content.sandbox.dropbox-proxy.com')
 
   describe 'authenticate', ->
     it 'completes the flow', (done) ->
       @timeout 120 * 1000  # Time-consuming because the user must click.
       @client.authenticate (uid, error) ->
-        assert.ok uid
+        expect(uid).to.be.a 'string'
         done()

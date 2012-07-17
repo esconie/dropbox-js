@@ -1,5 +1,5 @@
 # Node.js needs an adapter for the XHR API.
-unless XMLHttpRequest?
+if not XMLHttpRequest? and require?
     XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
 
 # Dispatches low-level XmlHttpRequests

@@ -47,9 +47,9 @@ class DropboxClient
 
   # Authenticates the app's user to Dropbox' API server.
   #
-  # @param {function(Number, String)} callback called when the authentication
+  # @param {function(String, String)} callback called when the authentication
   #     completes; if successful, the first argument is the user's Dropbox
-  #     UID, which is guaranteed to be consistent across API calls from the
+  #     user id, which is guaranteed to be consistent across API calls from the
   #     same application (not across applications, though); if an error occurs,
   #     the first argument is null and the second argument is an error string;
   #     the error is suitable for logging, but not for presenting to the user,
@@ -65,11 +65,13 @@ class DropboxClient
       @authDriver @authorizeUrl(token), (url) =>
         @getAccessToken (data, error) =>
           if error
+            @reset()
             callback null, error
             return
           token = data.oauth_token
           tokenSecret = data.oauth_token_secret
           @oauth.setToken token, tokenSecret
+          @uid = data.uid
           callback data.uid
 
   # Really low-level call to /oauth/request_token

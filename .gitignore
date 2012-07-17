@@ -4,6 +4,9 @@
 # Npm modules.
 node_modules
 
+# Vendored javascript modules.
+test/vendor
+
 # Build output.
 lib/dropbox.js
 lib/dropbox.min.js
