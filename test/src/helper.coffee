@@ -6,11 +6,17 @@ if global? and require? and module?
   global.chai = require 'chai'
   global.sinon = require 'sinon'
   global.sinonChai = require 'sinon-chai'
-  global.callbackServer = require './callback_server'
-
+  
+  callbackServer = require './callback_server'
+  global.authDriverUrl = callbackServer.url()
+  global.authDriver = callbackServer.authDriver()
 else
   # Browser
   exports = window
+  
+  # TODO: figure out authentication without popups
+  global.authDriverUrl = webReceiver.url()
+  global.authDriver = webReceiver.authDriver()
 
 
 # Common setup

@@ -3,10 +3,7 @@ describe 'DropboxClient', ->
     @client = new Dropbox.Client
       key: testKeys.key,
       secret: testKeys.secret
-    @client.authDriver callbackServer.url(), (authUrl, callback) ->
-      callbackServer.openBrowser authUrl
-      callbackServer.callback = callback
-
+    @client.authDriver authDriverUrl, authDriver
   describe 'custom API server', ->
     it 'computes the other URLs correctly', ->
       client = new Dropbox.Client

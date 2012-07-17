@@ -1,20 +1,22 @@
-http = require 'http'
+express = require 'express'
 open = require 'open'
 
-# Tiny node.js server that handles the authorize callback.
+# Tiny express.js server that handles the authorize callback.
 class CallbackServer
   # Starts up a HTTP server.
   constructor: (@port = 8912) ->
     @callback = () -> null
-    @urlRe = new RegExp "^/oauth_callback\?"
-
-    @http = http.createServer (request, response) =>
-      @doRequest request, response
-    @http.listen @port
+    @createApp()
 
   # The callback URL that should be supplied to the OAuth /authorize call.
   url: ->
     "http://localhost:#{@port}/oauth_callback"
+
+  # Returns a function that can be used as an OAuth driver.
+  authDriver: ->
+    (authUrl, callback) =>
+      @openBrowser authUrl
+      @callback = callback
 
   # Opens the given URL in a browser.
   openBrowser: (url) ->
@@ -22,14 +24,13 @@ class CallbackServer
       throw "Not a http/https URL: #{url}"
     open url
 
-  # Reads out an /authorize callback.
-  doRequest: (request, response) ->
-    if @urlRe.exec request.url
+  # The server code.
+  createApp: ->
+    @app = express.createServer()
+    @app.get '/oauth_callback', (request, response) =>
       @callback request.url
-    data = ''
-    request.on 'data', (dataFragment) -> data += dataFragment
-    request.on 'end', =>
       @closeBrowser response
+    @app.listen @port
 
   # Renders a response that will close the browser window used for OAuth.
   closeBrowser: (response) ->
@@ -38,9 +39,7 @@ class CallbackServer
                 <script type="text/javascript">window.close();</script>
                 <p>Please close this window.</p>
                 """
-    response.writeHead(200,
-      {'Content-Length': closeHtml.length, 'Content-Type': 'text/html' })
-    response.write closeHtml
-    response.end
+    response.header 'Content-Type', 'text/html'
+    response.send closeHtml
 
 module.exports = new CallbackServer

@@ -1,7 +1,6 @@
 {spawn, exec} = require 'child_process'
 fs = require 'fs'
 log = console.log
-open = require 'open'
 
 task 'build', ->
   build()
@@ -12,10 +11,11 @@ task 'test', ->
       run 'mocha --colors --require test/js/helper.js test/js/*test.js'
       run 'open test/browser_test.html'
 
-task 'test2', ->
+task 'webtest', ->
   vendor ->
     build ->
-      open './test/browser_test.html'
+      webFileServer = require './test/js/web_file_server.js'
+      webFileServer.openBrowser()
     
 task 'docs', ->
   run 'docco src/*.coffee'
@@ -29,9 +29,8 @@ build = (callback) ->
     run 'coffee --output lib --compile --join dropbox.js src/*.coffee', ->
       # Minify the javascript, for browser distribution.
       run 'uglifyjs --no-copyright -o lib/dropbox.min.js lib/dropbox.js', ->
-        run 'coffee --output test/js --compile test/src/*.coffee', ->
-          run 'browserify test/js/web_requires.js -o test/js/web_node_mocks.js',
-              callback
+        run 'coffee --output test/js --compile test/src/*.coffee',
+            callback
 
 vendor = (callback) ->
   # All the files will be dumped here.
