@@ -17,8 +17,8 @@ class DropboxXhr
   #     successful requests set the first parameter to an object containing the
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
-  @request: (method, url, params, auth_header, callback) ->
-    if method is 'GET'
+  @request: (method, url, params, auth_header, callback, request_body) ->
+    if method is 'GET' or method is 'PUT'
       url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     xhr = new XMLHttpRequest()
     xhr.open method, url, true
@@ -28,6 +28,8 @@ class DropboxXhr
       xhr.setRequestHeader 'Content-Type', 'application/x-www-form-urlencoded'
       body = DropboxXhr.urlEncode(params)
       xhr.send body
+    else if method is 'PUT'
+      xhr.send request_body
     else
       xhr.send()
     null
@@ -79,4 +81,6 @@ class DropboxXhr
            callback DropboxXhr.urlDecode(response)
          when 'application/json'
            callback JSON.parse(response)
+         else
+            callback response
     true

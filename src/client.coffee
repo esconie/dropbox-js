@@ -44,7 +44,24 @@ class DropboxClient
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
       accessToken: "#{@apiServer}/1/oauth/access_token"
-
+      getFiles: "#{@fileServer}/1/files"
+      putFiles: "#{@fileServer}/1/files_put"
+      postFiles: "#{@fileServer}/1/files"
+      metadata: "#{@apiServer}/1/metadata"
+      delta: "#{@apiServer}/1/delta"
+      revisions: "#{@apiServer}/1/revisions"
+      restore: "#{@apiServer}/1/restore"
+      search: "#{@apiServer}/1/search"
+      shares: "#{@apiServer}/1/shares"
+      media: "#{@apiServer}/1/media"
+      copy_ref: "#{@apiServer}/1/copy_ref"
+      thumbnails: "#{@fileServer}/1/thumbnails"
+      fileOps: "#{@apiServer}/1/fileops"
+      fileOpsCopy: "#{@apiServer}/1/fileops/copy"
+      fileOpsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
+      fileOpsDelete: "#{@apiServer}/1/fileops/delete"
+      fileOpsMove: "#{@apiServer}/1/fileops/move" 
+      
   # Authenticates the app's user to Dropbox' API server.
   #
   # @param {function(Number, String)} callback called when the authentication
@@ -103,3 +120,176 @@ class DropboxClient
   getAccessToken: (callback) ->
     authorize = @oauth.authHeader 'POST', @urls.accessToken, {}
     DropboxXhr.request 'POST', @urls.accessToken, {}, authorize, callback
+
+  # Downloads a file
+  #
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {Number} rev of the file to retrive, defaults to the most recent
+  #     revision
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  getFiles: (root, path, rev, callback) ->
+    url = "#{@urls.getFiles}/#{root}/#{path}"
+    params = {}
+    if rev?
+        params = {rev: rev}
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
+
+  # Uploads a file using PUT semantics
+  #
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {Binary} body of the file
+  # @param {String} locale to which to translate the metadata returned on
+  #     successful upload
+  # @param {Boolean} overwrite the existing file at the path (if any)
+  # @param {Number} parent_rev of the uploaded file (i.e. revision of the file
+  #     being edited)
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  putFiles: (root, path, body, locale, overwrite, parent_rev, callback) ->
+    url = "#{@urls.putFiles}/#{root}/#{path}"
+    params = {}
+    if parent_rev?
+        params['parent_rev'] = parent_rev
+    if locale?
+        params['locale'] = locale
+    if overwrite?
+        params['overwrite'] = overwrite
+    authorize = @oauth.authHeader 'PUT', url, params
+    DropboxXhr.request 'PUT', url, params, authorize, callback, body
+
+  # Post files
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {Binary} file to be uploaded
+  # @param {String} locale to which to translate the metadata returned on
+  #     successful upload
+  # @param {Boolean} overwrite the existing file at the path (if any)
+  # @param {Number} parent_rev of the uploaded file (i.e. revision of the file
+  #     being edited)
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  postFiles: (root, path, file, locale, overwrite, parent_rev, callback) ->
+    url - "#{@urls.putFiles}/#{root}/#{path}"
+    authorize = @oauth.authHeader 'POST', url, {}
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {Number} file_limit on the number of files listed. Defaults to
+  # 10,000, max is 25,000.
+  # @param {String} hash field of the last call to /metadata (on this folder). If
+  #     nothing has changed since the last call, the response will be a 304
+  #     (not modified) status code
+  # @param {Boolean} list
+  # @param {Boolean} include_deleted
+  # @param {Number} rev
+  # @param {String} locale
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  metadata: (root, path, file_limit, hash, list, include_deleted, rev, locale, callback) ->
+    url = "#{@urls.metadata}/#{root}/#{path}"  
+    authorize = @oauth.authHeader 'GET', url, {}
+
+
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  delta: (cursor, locale, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  revisions: (root, path, rev_limit, locale, callback) ->
+    null
+
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  restore: (root, path, rev, locale, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  search: (root, path, query, file_limit, include_deleted, locale, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  shares: (root, path, locale, short_url, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  media: (root, path, locale, callback) ->
+    null
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  copy_ref: (root, path, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  thumbnails: (eoot, path, format, size, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {Number} rev of the file to retrive, defaults to the most recent
+  #     revision
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  fileops_copy: (root, from_path, to_path, locale, from_copy_ref, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  fileops_create_folder: (root, path, locale, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  fileops_delete: (root, path, locale, callback) ->
+    null
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  fileops_move: (root, from_path, to_path, locale, callback) ->
+    null
+
