@@ -14,6 +14,9 @@ else
 
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
 Dropbox.Client = DropboxClient
+Dropbox.Driver =
+  Popup: DropboxPopupDriver
+  NodeServer: DropboxNodeServerDriver
 Dropbox.Oauth = DropboxOauth
 Dropbox.Xhr = DropboxXhr
 Dropbox.hmac = base64HmacSha1

@@ -20,7 +20,7 @@ describe 'DropboxClient', ->
 
   describe 'authenticate', ->
     it 'completes the flow', (done) ->
-      @timeout 120 * 1000  # Time-consuming because the user must click.
+      @timeout 15 * 1000  # Time-consuming because the user must click.
       @client.authenticate (uid, error) ->
         expect(uid).to.be.a 'string'
         done()

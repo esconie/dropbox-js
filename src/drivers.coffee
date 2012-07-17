@@ -1,15 +1,20 @@
-# Logic for showing a popup window and waiting for a postMessage from it.
-class WebReceiver
+# OAuth driver that uses a popup window and postMessage to complete the flow.
+class DropboxPopupDriver
   constructor: ->
     @computeUrl()
 
-  # Returns a function that can be used as an OAuth driver.
+  # Builds a function that can be used as an OAuth driver by Dropbox.Client.
+  #
+  # @return {function(String, function(String))} function that can be passed to
+  #     authDriver on Dropbox.Client.
   authDriver: ->
     (authUrl, callback) =>
       @listenForMessage callback
       @openWindow authUrl
 
   # The URL of the HTML file that can receive OAuth redirects.
+  #
+  # @return {String} an URL
   url: ->
     @receiverUrl
 
@@ -56,4 +61,52 @@ class WebReceiver
     window.addEventListener 'message', listener, false
 
 
-window.webReceiver = new WebReceiver()
+# OAuth driver that redirects the browser to a node app to complete the flow.
+#
+# This is useful for testing node.js libraries and applications.
+class DropboxNodeServerDriver
+  # Starts up the node app that intercepts the browser redirect.
+  #
+  # @param {Number} port the port number to listen to for requests
+  constructor: (@port = 8912) ->
+    # Calling require in the constructor because this doesn't work in browsers.
+    @express = require 'express'
+    @open = require 'open'
+    
+    @callback = () -> null
+    @createApp()
+
+  # The callback URL that should be supplied to the OAuth /authorize call.
+  url: ->
+    "http://localhost:#{@port}/oauth_callback"
+
+  # Returns a function that can be used as an OAuth driver.
+  authDriver: ->
+    (authUrl, callback) =>
+      @openBrowser authUrl
+      @callback = callback
+
+  # Opens the given URL in a browser.
+  openBrowser: (url) ->
+    unless url.match /^https?:\/\//
+      throw "Not a http/https URL: #{url}"
+    @open url
+
+  # The server code.
+  createApp: ->
+    @app = @express.createServer()
+    @app.get '/oauth_callback', (request, response) =>
+      @callback request.url
+      @closeBrowser response
+    @app.listen @port, 'localhost'
+
+  # Renders a response that will close the browser window used for OAuth.
+  closeBrowser: (response) ->
+    closeHtml = """
+                <!doctype html>
+                <script type="text/javascript">window.close();</script>
+                <p>Please close this window.</p>
+                """
+    response.header 'Content-Type', 'text/html'
+    response.send closeHtml
+
