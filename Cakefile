@@ -9,7 +9,7 @@ task 'test', ->
   vendor ->
     build ->
       run 'mocha --colors --require test/js/helper.js test/js/*test.js'
-      run 'open test/browser_test.html'
+      run 'open test/html/browser_test.html'
 
 task 'webtest', ->
   vendor ->

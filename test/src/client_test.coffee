@@ -45,3 +45,14 @@ describe 'DropboxClient', ->
             metadata = JSON.parse(metadata)
             expect(metadata.path).to.equal "/api-write-test.txt"
             done()
+
+  describe 'metadata', ->
+    it 'retrieves file metadata', (done) ->
+      @timeout 120*1000
+      client = @client
+      @client.authenticate (uid, error) ->
+        assert.ok uid
+        client.metadata 'dropbox', 'api-test.txt', undefined, undefined, undefined, undefined, undefined, undefined, (metadata, error) ->
+            metadata = JSON.parse(metadata)
+            expect(metadata.path).to.equal "/api-test.txt"
+            done()
