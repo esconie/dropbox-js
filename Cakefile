@@ -7,6 +7,8 @@ task 'build', ->
 task 'test', ->
   build ->
     run 'mocha --colors --require test/js/helper.js test/js/*test.js'
+    run 'ender build tests/js/'
+    run 'open test/browser_test.html'
     
 task 'docs', ->
   run 'docco src/*.coffee'
