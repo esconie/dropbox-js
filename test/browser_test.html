@@ -1,0 +1,42 @@
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <title>Mocha Tests</title>
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+  <script src="js/nodeimports.js"></script>
+  <script>
+    //var global = {};
+    var module = {};
+    function require(module) {
+        if (window[module]) {
+            return window[module];
+        } else if (window.modules.hasOwnProperty(module)) {
+            return window.modules[module]();
+        } else {
+            return;
+        }
+    };
+    var sinon = require("/node_modules/sinon/lib/sinon.js");
+  </script>
+  <script src="../lib/dropbox.js"></script>
+  <script src="js/helper.js"></script>
+  <script src="js/jquery-1.7.2.js"></script>
+  <script src="../node_modules/should/lib/eql.js"></script>
+  <script src="../node_modules/should/lib/should.js"></script>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script>mocha.setup('bdd')</script>
+  <script src="js/hmac_test.js"></script>
+  <script src="js/oauth_test.js"></script>
+  <script src="js/xhr_test.js"></script>
+  <script>
+    $(function(){
+      mocha
+        .run()
+    })
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>
