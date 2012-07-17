@@ -1,6 +1,9 @@
-# Node.js needs an adapter for the XHR API.
-if not XMLHttpRequest? and require?
-    XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
+if window?
+  XMLHttpRequest = window.XMLHttpRequest  
+  # TODO: XDomain for CORS on IE <= 9
+else
+  # Node.js needs an adapter for the XHR API.
+  XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
 
 # Dispatches low-level XmlHttpRequests
 class DropboxXhr
@@ -12,17 +15,18 @@ class DropboxXhr
   #     that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
   #     request parameters
-  # @param {String} auth_header the value of the Authorization header
+  # @param {String} authHeader the value of the Authorization header
   # @param {function(?Object, ?String)}callback called with the AJAX result;
   #     successful requests set the first parameter to an object containing the
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
-  @request: (method, url, params, auth_header, callback) ->
+  @request: (method, url, params, authHeader, callback) ->
     if method is 'GET'
       url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     xhr = new XMLHttpRequest()
     xhr.open method, url, true
-    xhr.setRequestHeader 'Authorization', auth_header
+    if authHeader
+      xhr.setRequestHeader 'Authorization', authHeader
     xhr.onreadystatechange = -> DropboxXhr.onReadyStateChange(xhr, callback)
     if method is 'POST'
       xhr.setRequestHeader 'Content-Type', 'application/x-www-form-urlencoded'

@@ -45,14 +45,41 @@ describe 'Oauth', ->
 
       @nonceStub.restore()
 
+  describe '#addAuthParams', ->
+    it 'matches the OAuth 1.0a example', ->
+      @nonceStub = sinon.stub @oauth, 'nonce'
+      @nonceStub.returns 'kllo9940pd9333jh'
+
+      goldenParams = 
+        file: 'vacation.jpg'
+        oauth_consumer_key: 'dpf43f3p2l4k3l03'
+        oauth_nonce: 'kllo9940pd9333jh'
+        oauth_signature: 'tR3+Ty81lMeYAr/Fid0kMTYa/WM='
+        oauth_signature_method: 'HMAC-SHA1'
+        oauth_timestamp: '1191242096'
+        oauth_token: 'nnch734d00sl2jdk'
+        oauth_version: '1.0'
+        size: 'original'
+
+      @oauth.addAuthParams @request.method, @request.url, @request.params
+      expect(Dropbox.Xhr.urlEncode(@request.params)).to.
+          eql Dropbox.Xhr.urlEncode(goldenParams)
+
+      @nonceStub.restore()
+
+    it "doesn't leave any OAuth-related value in params", ->
+      @oauth.authHeader(@request.method, @request.url, @request.params)
+      expect(Dropbox.Xhr.urlEncode(@request.params)).to.
+          equal "file=vacation.jpg&size=original"
+
   describe '#authHeader', ->
     it 'matches the OAuth 1.0a example', ->
       @nonceStub = sinon.stub @oauth, 'nonce'
       @nonceStub.returns 'kllo9940pd9333jh'
 
-      golden_header = 'OAuth oauth_consumer_key="dpf43f3p2l4k3l03",oauth_nonce="kllo9940pd9333jh",oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D",oauth_signature_method="HMAC-SHA1",oauth_timestamp="1191242096",oauth_token="nnch734d00sl2jdk",oauth_version="1.0"'
+      goldenHeader = 'OAuth oauth_consumer_key="dpf43f3p2l4k3l03",oauth_nonce="kllo9940pd9333jh",oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D",oauth_signature_method="HMAC-SHA1",oauth_timestamp="1191242096",oauth_token="nnch734d00sl2jdk",oauth_version="1.0"'
       header = @oauth.authHeader @request.method, @request.url, @request.params
-      expect(header).to.equal golden_header
+      expect(header).to.equal goldenHeader
 
       @nonceStub.restore()
 

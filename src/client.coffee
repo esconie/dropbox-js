@@ -81,8 +81,8 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #    /oauth/request_token HTTP request
   requestToken: (callback) ->
-    authorize = @oauth.authHeader 'POST', @urls.requestToken, {}
-    DropboxXhr.request 'POST', @urls.requestToken, {}, authorize, callback
+    params = @oauth.addAuthParams 'POST', @urls.requestToken, {}
+    DropboxXhr.request 'POST', @urls.requestToken, params, null, callback
   
   # The URL for /oauth/authorize, embedding the user's token.
   #
@@ -103,5 +103,5 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #    /oauth/access_token HTTP request
   getAccessToken: (callback) ->
-    authorize = @oauth.authHeader 'POST', @urls.accessToken, {}
-    DropboxXhr.request 'POST', @urls.accessToken, {}, authorize, callback
+    params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
+    DropboxXhr.request 'POST', @urls.accessToken, params, null, callback

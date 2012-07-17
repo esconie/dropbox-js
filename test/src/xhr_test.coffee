@@ -16,6 +16,33 @@ describe 'DropboxXhr', ->
       key = testKeys.key
       secret = testKeys.secret
       timestamp = Math.floor(Date.now() / 1000).toString()
+      params =
+          oauth_consumer_key: testKeys.key
+          oauth_nonce: '_' + timestamp
+          oauth_signature: testKeys.secret + '&'
+          oauth_signature_method: 'PLAINTEXT'
+          oauth_timestamp: timestamp
+          oauth_version: '1.0'
+
+      Dropbox.Xhr.request('POST',
+        'https://api.dropbox.com/1/oauth/request_token',
+        params,
+        null,
+        (data, error) ->
+          expect(error).to.equal undefined
+          expect(data).to.have.property 'oauth_token'
+          expect(data).to.have.property 'oauth_token_secret'
+          done()
+        )
+
+    it 'sends Authorize headers correctly', (done) ->
+      # This test only works in node.js due to CORS issues on Dropbox.
+      unless module? and module?.exports? and require?
+        return done()
+
+      key = testKeys.key
+      secret = testKeys.secret
+      timestamp = Math.floor(Date.now() / 1000).toString()
       oauth_header = "OAuth oauth_consumer_key=\"#{key}\",oauth_nonce=\"_#{timestamp}\",oauth_signature=\"#{secret}%26\",oauth_signature_method=\"PLAINTEXT\",oauth_timestamp=\"#{timestamp}\",oauth_version=\"1.0\""
 
       Dropbox.Xhr.request('POST',
@@ -28,7 +55,6 @@ describe 'DropboxXhr', ->
           expect(data).to.have.property 'oauth_token_secret'
           done()
         )
-
 
   describe '#urlEncode', ->
     it 'iterates properly', ->
