@@ -5,6 +5,16 @@ modern browsers and in server-side code running under
 [node.js](http://nodejs.org/).
 
 
+## Supported Platforms
+
+This library is tested against the following JavaScript platforms
+
+* node.js 0.8
+* Chrome 20
+* Firefox 12
+* Internet Explorer 8, 9, 10
+
+
 ## Installation
 
 The library can be included in client-side applications using the following

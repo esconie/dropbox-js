@@ -13,8 +13,9 @@ else
   throw 'This library only supports node.js and browser applications.'
 
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
-Dropbox.Xhr = DropboxXhr
+Dropbox.Client = DropboxClient
 Dropbox.Oauth = DropboxOauth
+Dropbox.Xhr = DropboxXhr
 Dropbox.hmac = base64HmacSha1
 Dropbox.sha1 = base64Sha1
 

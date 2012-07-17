@@ -1,7 +1,8 @@
 describe 'Oauth', ->
   beforeEach ->
-    @oauth = new Dropbox.Oauth(
-      {apiKey: 'dpf43f3p2l4k3l03', apiSecret: 'kd94hf93k423kf44'})
+    @oauth = new Dropbox.Oauth
+      key: 'dpf43f3p2l4k3l03',
+      secret: 'kd94hf93k423kf44'
     @oauth.setToken 'nnch734d00sl2jdk', 'pfkkdhi9sl3r4s00'
 
     # The example in OAuth 1.0a Appendix A.

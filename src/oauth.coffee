@@ -2,13 +2,13 @@
 class DropboxOauth
   # Creates an Oauth instance that manages an application's keys and token.
   #
-  # @param {Object} options must have the following properties: apiKey is the
+  # @param {Object} options must have the following properties: key is the
   #     Dropbox application's key (consumer key, in OAuth vocabulary) and
-  #     apiSecret is the Dropbox application's secret (OAuth calls it the
+  #     secret is the Dropbox application's secret (OAuth calls it the
   #     consumer secret)
   constructor: (options) ->
-    @key = options.apiKey
-    @secret = options.apiSecret
+    @key = options.key
+    @secret = options.secret
     @setToken null, ''
 
   # Sets the OAuth token to be used for future requests.

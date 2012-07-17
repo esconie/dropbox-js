@@ -13,8 +13,8 @@ describe 'DropboxXhr', ->
         )
 
     it 'processes data correctly', (done) ->
-      key = test_keys.key
-      secret = test_keys.secret
+      key = testKeys.key
+      secret = testKeys.secret
       timestamp = Math.floor(Date.now() / 1000).toString()
       oauth_header = "OAuth oauth_consumer_key=\"#{key}\",oauth_nonce=\"_#{timestamp}\",oauth_signature=\"#{secret}%26\",oauth_signature_method=\"PLAINTEXT\",oauth_timestamp=\"#{timestamp}\",oauth_version=\"1.0\""
 
