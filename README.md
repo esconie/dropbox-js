@@ -54,7 +54,7 @@ suite. Last, use `cake` to get a Dropbox token that will be used by tests.
 ```bash
 git clone https://github.com/pwnall/dropbox-sdk.git
 cd dropbox-sdk
-npm install -g browserify coffee-script mocha uglify-js
+npm install -g coffee-script mocha uglify-js
 npm install
 cake token
 ```
