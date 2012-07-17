@@ -13,3 +13,5 @@ lib/dropbox.min.js
 test/js
 tmp/*.js
 
+# Login credentials used for testing.
+test/.token

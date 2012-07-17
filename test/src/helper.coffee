@@ -7,13 +7,17 @@ if global? and require? and module?
   global.sinon = require 'sinon'
   global.sinonChai = require 'sinon-chai'
   
-  authDriver = new Dropbox.Driver.NodeServer()
+  authDriver = new Dropbox.Drivers.NodeServer()
+
+  TokenStash = require './token_stash.js'
+  (new TokenStash()).get (credentials) ->
+    global.testKeys = credentials
 else
   # Browser
   exports = window
   
   # TODO: figure out authentication without popups
-  authDriver = new Dropbox.Driver.Popup()
+  authDriver = new Dropbox.Drivers.Popup()
 
 
 # Common setup
@@ -21,9 +25,3 @@ exports.assert = exports.chai.assert
 exports.expect = exports.chai.expect
 exports.authDriverUrl = authDriver.url()
 exports.authDriver = authDriver.authDriver()
-
-
-# TODO: read this from some file
-exports.testKeys =
-  key: 'h228j8rzh0hl0nb',
-  secret: '3zvaj7tuopg6pg9'

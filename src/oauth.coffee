@@ -9,11 +9,22 @@ class DropboxOauth
   constructor: (options) ->
     @key = options.key
     @secret = options.secret
-    @setToken null, ''
+    unless @key and @secret
+      throw new Error('Missing Dropbox API key or application secret')
+
+    if options.token
+      @setToken options.token, options.tokenSecret
+    else
+      @setToken null, ''
 
   # Sets the OAuth token to be used for future requests.
   setToken: (token, tokenSecret) ->
+    if token and (not tokenSecret)
+        throw new Error('No secret supplied with the user token')
+
     @token = token
+    @tokenSecret = tokenSecret || ''
+
     # This is part of signing, but it's set here so it can be cached.
     @hmacKey = DropboxXhr.urlEncodeValue(@secret) + '&' +
       DropboxXhr.urlEncodeValue(tokenSecret)

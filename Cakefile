@@ -8,20 +8,27 @@ task 'build', ->
 task 'test', ->
   vendor ->
     build ->
-      run 'mocha --colors --require test/js/helper.js test/js/*test.js'
-      run 'open test/browser_test.html'
+      token ->
+        run 'mocha --colors --require test/js/helper.js test/js/*test.js'
+        run 'open test/browser_test.html'
 
 task 'webtest', ->
   vendor ->
     build ->
-      webFileServer = require './test/js/web_file_server.js'
-      webFileServer.openBrowser()
+      token ->
+        webFileServer = require './test/js/web_file_server.js'
+        webFileServer.openBrowser()
     
 task 'docs', ->
   run 'docco src/*.coffee'
   
 task 'vendor', ->
   vendor()
+
+task 'token', ->
+  build ->
+    token ->
+      process.exit 0
 
 build = (callback) ->
   # Compile without --join for decent error messages.
@@ -43,6 +50,12 @@ vendor = (callback) ->
       download 'http://sinonjs.org/releases/sinon-ie.js',
                'test/vendor/sinon-ie.js', callback
 
+token = (callback) ->
+  TokenStash = require './test/js/token_stash.js'
+  tokenStash = new TokenStash
+  (new TokenStash()).get ->
+    callback() if callback?
+
 run = (args...) ->
   for a in args
     switch typeof a
@@ -61,7 +74,7 @@ run = (args...) ->
 
 download = (url, file, callback) ->
   if fs.existsSync file
-    callback()
+    callback() if callback?
     return
 
   run "curl -o #{file} #{url}", callback

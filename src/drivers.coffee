@@ -70,10 +70,11 @@ class DropboxNodeServerDriver
   # @param {Number} port the port number to listen to for requests
   constructor: (@port = 8912) ->
     # Calling require in the constructor because this doesn't work in browsers.
-    @express = require 'express'
     @open = require 'open'
+    @http = require 'http'
     
     @callback = () -> null
+    @urlRe = new RegExp "^/oauth_callback\?"
     @createApp()
 
   # The callback URL that should be supplied to the OAuth /authorize call.
@@ -92,13 +93,26 @@ class DropboxNodeServerDriver
       throw "Not a http/https URL: #{url}"
     @open url
 
-  # The server code.
+  # Creates and starts up an HTTP server that will intercept the redirect.
   createApp: ->
-    @app = @express.createServer()
-    @app.get '/oauth_callback', (request, response) =>
+    @app = @http.createServer (request, response) =>
+      @doRequest request, response
+    @app.listen @port
+
+  # Shuts down the HTTP server.
+  #
+  # The driver will become unusable after this call.
+  closeServer: ->
+    @app.close()
+
+  # Reads out an /authorize callback.
+  doRequest: (request, response) ->
+    if @urlRe.exec request.url
       @callback request.url
+    data = ''
+    request.on 'data', (dataFragment) -> data += dataFragment
+    request.on 'end', =>
       @closeBrowser response
-    @app.listen @port, 'localhost'
 
   # Renders a response that will close the browser window used for OAuth.
   closeBrowser: (response) ->
@@ -107,6 +121,7 @@ class DropboxNodeServerDriver
                 <script type="text/javascript">window.close();</script>
                 <p>Please close this window.</p>
                 """
-    response.header 'Content-Type', 'text/html'
-    response.send closeHtml
-
+    response.writeHead(200,
+      {'Content-Length': closeHtml.length, 'Content-Type': 'text/html' })
+    response.write closeHtml
+    response.end

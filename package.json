@@ -13,13 +13,13 @@
     "node": ">= 0.8"
   },
   "dependencies": {
-    "express": ">= 3.0.0beta7",
     "open": ">= 0.0.2",
     "xmlhttprequest": ">= 1.4.0"
   },
   "devDependencies": {
     "chai": ">= 1.1.1",
     "coffee-script": ">= 1.3.3",
+    "express": ">= 3.0.0beta7",
     "mocha": ">= 1.3.0",
     "sinon": ">= 1.4.2",
     "sinon-chai": ">= 2.1.2",

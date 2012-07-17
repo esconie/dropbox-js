@@ -10,16 +10,20 @@ class DropboxClient
   #     (access to a single directory exclusive to the app)
   # @option {String} key the application's API key
   # @option {String} secret the application's API secret
+  # @option {String} token if set, the user's access token
+  # @option {String} tokenSecret if set, the secret for the user's access token
+  # @option {String} uid if set, the user's Dropbox UID
   constructor: (options) ->
     @sandbox = options.sandbox or false
     @oauth = new DropboxOauth options
+    @uid = options.uid or null
 
     @apiServer = options.server or 'https://api.dropbox.com'
     @authServer = options.authServer or @apiServer.replace('api.', 'www.')
     @fileServer = options.fileServer or
                     @apiServer.replace('api.', 'api-content.')
     
-    @reset()
+    @setupUrls()
 
   # Plugs in the authentication driver.
   #
@@ -36,10 +40,14 @@ class DropboxClient
     @authDriver = driver
 
   # Removes all login information.
+  #
+  # @return {Dropbox.Client} this, for easy call chaining
   reset: ->
-    @userId = null
+    @uid = null
     @oauth.setToken null, ''
-    
+    @
+
+  setupUrls: ->
     @urls = 
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
@@ -61,6 +69,20 @@ class DropboxClient
       fileOpsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileOpsDelete: "#{@apiServer}/1/fileops/delete"
       fileOpsMove: "#{@apiServer}/1/fileops/move" 
+
+  # OAuth credentials.
+  #
+  # @return {Object} a plain object whose properties can be passed to the
+  #     Dropbox.Client constructor to reuse this client's login credentials
+  credentials: ->
+    value =
+      key: @oauth.key
+      secret: @oauth.secret
+    if @oauth.token
+      value.token = @oauth.token
+      value.tokenSecret = @oauth.tokenSecret
+      value.uid = @uid
+    value
       
   # Authenticates the app's user to Dropbox' API server.
   #

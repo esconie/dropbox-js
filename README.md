@@ -49,14 +49,22 @@ using [uglify.js](https://github.com/mishoo/UglifyJS/), and tested using
 
 First install [node.js](http://nodejs.org/#download) to get `npm` (the node
 package manager), then use it to install the libraries required by the test
-suite. Last, use `cake` to run the test suite.
+suite. Last, use `cake` to get a Dropbox token that will be used by tests.
 
 ```bash
 git clone https://github.com/pwnall/dropbox-sdk.git
 cd dropbox-sdk
 npm install -g browserify coffee-script mocha uglify-js
 npm install
+cake token
+```
+
+After the one-time setup is completed, you can run the node.js tests and/or
+the browser tests.
+
+```bash
 cake test
+cake webtest
 ```
 
 
