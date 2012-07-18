@@ -54,13 +54,12 @@ class DropboxClient
       search: "#{@apiServer}/1/search"
       shares: "#{@apiServer}/1/shares"
       media: "#{@apiServer}/1/media"
-      copy_ref: "#{@apiServer}/1/copy_ref"
+      copyRef: "#{@apiServer}/1/copy_ref"
       thumbnails: "#{@fileServer}/1/thumbnails"
-      fileOps: "#{@apiServer}/1/fileops"
-      fileOpsCopy: "#{@apiServer}/1/fileops/copy"
-      fileOpsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
-      fileOpsDelete: "#{@apiServer}/1/fileops/delete"
-      fileOpsMove: "#{@apiServer}/1/fileops/move" 
+      fileopsCopy: "#{@apiServer}/1/fileops/copy"
+      fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
+      fileopsDelete: "#{@apiServer}/1/fileops/delete"
+      fileopsMove: "#{@apiServer}/1/fileops/move" 
       
   # Authenticates the app's user to Dropbox' API server.
   #
@@ -217,40 +216,76 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   delta: (cursor, locale, callback) ->
-    null
+    url = @urls.delta
+    params = {}
+    if cursor?
+        params['cursor'] = cursor
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  revisions: (root, path, rev_limit, locale, callback) ->
-    null
-
-
+  revisions: (root, path, revLimit, locale, callback) ->
+    url = "#{@urls.revisions}/#{root}/#{path}"
+    params = {}
+    if revLimit?
+        params['rev_limit'] = revLimit
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
+    
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   restore: (root, path, rev, locale, callback) ->
-    null
+    url = "#{@urls.restore}/#{root}/#{path}"
+    params = {}
+    if rev?
+        params['rev'] = rev
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  search: (root, path, query, file_limit, include_deleted, locale, callback) ->
-    null
+  search: (root, path, query, fileLimit, includeDeleted, locale, callback) ->
+    url = "#{@urls.search}/#{root}/#{path}"
+    params = {query: query}
+    if fileLimit?
+        params['file_limit'] = fileLimit
+    if includeDeleted?
+        params['include_deleted'] = includeDeleted
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  shares: (root, path, locale, short_url, callback) ->
-    null
+  shares: (root, path, locale, shortUrl, callback) ->
+    url = "#{@urls.shares}/#{root}/#{path}"
+    params = {}
+    if locale?
+        params['locale'] = locale
+    if shortUrl?
+        params['short_url'] = shortUrl
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -258,22 +293,38 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   media: (root, path, locale, callback) ->
-    null
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  copy_ref: (root, path, callback) ->
-    null
+    url = "#{@urls.media}/#{root}/#{path}"
+    params = {}
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  thumbnails: (eoot, path, format, size, callback) ->
-    null
+  copyRef: (root, path, callback) ->
+    url = "#{@urls.copyRef}/#{root}/#{path}"
+    params = {}
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to retrieve
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  thumbnails: (root, path, format, size, callback) ->
+    url = "#{@urls.thumbnails}/#{root}/#{path}"
+    params = {}
+    if format?
+        params['format'] = format
+    if size?
+        params['size'] = size
+    authorize = @oauth.authHeader 'GET', url, params
+    DropboxXhr.request 'GET', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -282,29 +333,54 @@ class DropboxClient
   #     revision
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  fileops_copy: (root, from_path, to_path, locale, from_copy_ref, callback) ->
-    null
+  fileopsCopy: (root, fromPath, toPath, locale, fromCopyRef, callback) ->
+    url = @urls.fileopsCopy
+    params = {root: root, to_path: toPath}
+    if fromPath?
+        params['from_path'] = fromPath
+    else if fromCopyRef?
+        params['from_copy_ref'] = fromCopyRef
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  fileops_create_folder: (root, path, locale, callback) ->
-    null
+  fileopsCreateFolder: (root, path, locale, callback) ->
+    url = @urls.fileopsCreateFolder
+    params = {root: root, path: path}
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
+    
+
+  # @param {String} root relative to which path is specified. Valid values
+  #     are 'sandbox' and 'dropbox'
+  # @param {String} path to the file you want to delete
+  # @param {function(data, error)} callback called with the result to the
+  #     /files (GET) HTTP request. 
+  fileopsDelete: (root, path, locale, callback) ->
+    url = @urls.fileopsDelete
+    params = {root: root, path: path}
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  fileops_delete: (root, path, locale, callback) ->
-    null
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  fileops_move: (root, from_path, to_path, locale, callback) ->
-    null
+  fileopsMove: (root, fromPath, toPath, locale, callback) ->
+    url = @urls.fileopsMove
+    params = {root: root, from_path: fromPath, to_path: toPath}
+    if locale?
+        params['locale'] = locale
+    authorize = @oauth.authHeader 'POST', url, params
+    DropboxXhr.request 'POST', url, params, authorize, callback
