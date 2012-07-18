@@ -61,6 +61,7 @@ class DropboxClient
       
       # Files and metadata.
       getFile: "#{@fileServer}/1/files/#{@fileRoot}"
+      postFile: "#{@fileServer}/1/files/#{@fileRoot}"
       putFile: "#{@fileServer}/1/files_put/#{@fileRoot}"
       metadata: "#{@apiServer}/1/metadata/#{@fileRoot}"
       delta: "#{@apiServer}/1/delta"
@@ -195,16 +196,33 @@ class DropboxClient
       callback = options
       options = null
 
-    url = "#{@urls.putFile}/#{path}"
-    params = {}
+    slashIndex = path.lastIndexOf '/'
+    if slashIndex is -1
+      fileName = path
+      path = ''
+    else
+      fileName = path.substring slashIndex
+      path = path.substring 0, slashIndex
+
+    url = "#{@urls.postFile}/#{path}"
+    params = { file: fileName }
     if options
       if options.noOverwrite
         params.overwrite = 'false'
       if options.lastVersion?
           params.parent_rev = options.lastVersion
     # TODO: locale support would edit the params here
-    @oauth.addAuthParams 'PUT', url, params
-    DropboxXhr.request 'PUT', url, params, null, callback, data
+    @oauth.addAuthParams 'POST', url, params
+    # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
+    #       signing the request; the code below works as intended
+    delete params.file
+    
+    fileField =
+      name: 'file',
+      value: data,
+      fileName: fileName
+      contentType: 'application/octet-stream'
+    DropboxXhr.multipartRequest url, fileField, params, null, callback
 
   # @param {String} path to the file you want to retrieve
   # @param {Number} file_limit on the number of files listed. Defaults to
@@ -233,8 +251,8 @@ class DropboxClient
         params['rev'] = rev
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
 
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
@@ -245,8 +263,8 @@ class DropboxClient
         params['cursor'] = cursor
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -275,8 +293,8 @@ class DropboxClient
         params['rev'] = rev
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -292,8 +310,8 @@ class DropboxClient
         params['include_deleted'] = includeDeleted
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -307,8 +325,8 @@ class DropboxClient
         params['locale'] = locale
     if shortUrl?
         params['short_url'] = shortUrl
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -320,8 +338,8 @@ class DropboxClient
     params = {}
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -331,8 +349,8 @@ class DropboxClient
   copyRef: (path, callback) ->
     url = "#{@urls.copyRef}/#{path}"
     params = {}
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -346,8 +364,8 @@ class DropboxClient
         params['format'] = format
     if size?
         params['size'] = size
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -365,8 +383,8 @@ class DropboxClient
         params['from_copy_ref'] = fromCopyRef
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
@@ -376,8 +394,8 @@ class DropboxClient
     params = {root: @fileRoot, path: path}
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
     
 
   # @param {String} root relative to which path is specified. Valid values
@@ -390,8 +408,8 @@ class DropboxClient
     params = {root: @fileRoot, path: path}
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'
@@ -403,5 +421,5 @@ class DropboxClient
     params = {root: @fileRoot, from_path: fromPath, to_path: toPath}
     if locale?
         params['locale'] = locale
-    authorize = @oauth.authHeader 'POST', url, params
-    DropboxXhr.request 'POST', url, params, authorize, callback
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback

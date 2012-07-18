@@ -20,23 +20,79 @@ class DropboxXhr
   #     successful requests set the first parameter to an object containing the
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
-  @request: (method, url, params, authHeader, callback, request_body) ->
-    if method is 'GET' or method is 'PUT'
+  @request: (method, url, params, authHeader, callback) ->
+    if method is 'GET'
       url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+    headers = {}
+    if authHeader
+      headers['Authorization'] = authHeader
+    if method is 'POST'
+      headers['Content-Type'] = 'application/x-www-form-urlencoded'
+      body = DropboxXhr.urlEncode params
+    else
+      body = null
+    @xhrRequest method, url, headers, body, callback
+    null
+
+  # Upload a file via a mulitpart/form-data method.
+  # 
+  # This is a one-off method for the abomination that is POST /files. We can't
+  # use PUT because in browser environments, using it requires a pre-flight
+  # request (using the OPTIONS verb) that the API server implement.
+  #
+  # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
+  #     that receives the request
+  # @param {Object} params an associative array (hash) containing the HTTP
+  #     request parameters
+  # @param {String} fieldName the name of the form field whose value is
+  #     submitted in the multipart/form-data body
+  # @param {String} data the file content to be uploaded
+  # @param {String} authHeader the value of the Authorization header
+  # @param {function(?Object, ?String)}callback called with the AJAX result;
+  #     successful requests set the first parameter to an object containing the
+  #     parsed result, and unsuccessful requests set the second parameter to
+  #     an error string
+  @multipartRequest: (url, fileField, params, authHeader, callback) ->
+    url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+    
+    fileType = fileField.contentType or 'application/octet-stream'
+    boundary = @multipartBoundary()
+    body = ['--', boundary, "\r\n",
+            'Content-Disposition: form-data; name="', fileField.name,
+                '"; filename="', fileField.fileName, "\"\r\n",
+            'Content-Type: ', fileType, "\r\n",
+            "Content-Transfer-Encoding: binary\r\n\r\n",
+            fileField.value, "\r\n",
+            '--', boundary, '--', "\r\n"].join ''
+
+    headers = { 'Content-Type': "multipart/form-data; boundary=#{boundary}" }
+    if authHeader
+      headers['Authorization'] = authHeader
+
+    @xhrRequest 'POST', url, headers, body, callback
+
+  # Generates a bounday suitable for separating multipart data.
+  #
+  # @return {String} boundary suitable for multipart form data
+  @multipartBoundary: ->
+    [Date.now().toString(36),
+     Math.random().toString(36)].join '----'
+
+  # Implementation for request and multipartRequest.
+  #
+  # @param {Boolean} binaryBody
+  @xhrRequest: (method, url, headers, body, callback) ->
     xhr = new XMLHttpRequest()
     xhr.open method, url, true
-    if authHeader
-      xhr.setRequestHeader 'Authorization', authHeader
+    for own header, value of headers
+      xhr.setRequestHeader header, value
     xhr.onreadystatechange = -> DropboxXhr.onReadyStateChange(xhr, callback)
-    if method is 'POST'
-      xhr.setRequestHeader 'Content-Type', 'application/x-www-form-urlencoded'
-      body = DropboxXhr.urlEncode(params)
+    if body
       xhr.send body
-    else if method is 'PUT'
-      xhr.send request_body
     else
       xhr.send()
     null
+
 
   # Encodes an associative array (hash) into a x-www-form-urlencoded String.
   #
