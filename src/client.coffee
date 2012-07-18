@@ -169,6 +169,7 @@ class DropboxClient
       callback = options
       options = null
 
+    path = @normalizePath path
     url = "#{@urls.getFile}/#{path}"
     params = {}
     if options
@@ -204,6 +205,7 @@ class DropboxClient
       fileName = path.substring slashIndex
       path = path.substring 0, slashIndex
 
+    path = @normalizePath path
     url = "#{@urls.postFile}/#{path}"
     params = { file: fileName }
     if options
@@ -224,6 +226,18 @@ class DropboxClient
       contentType: 'application/octet-stream'
     DropboxXhr.multipartRequest url, fileField, params, null, callback
 
+  # Normalizes a Dropbox path for API requests.
+  #
+  # This is an internal method. It is used by all the client methods that take
+  # paths as arguments.
+  #
+  # @param {String} path a path 
+  normalizePath: (path) ->
+    if path.substring(0, 1) is '/'
+      path.substring 1
+    else
+      path
+
   # @param {String} path to the file you want to retrieve
   # @param {Number} file_limit on the number of files listed. Defaults to
   # 10,000, max is 25,000.
@@ -237,6 +251,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   metadata: (path, fileLimit, hash, list, includeDeleted, rev, locale, callback) ->
+    path = @normalizePath path
     url = "#{@urls.metadata}/#{path}"  
     params = {}
     if fileLimit?
@@ -272,6 +287,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   revisions: (path, revLimit, locale, callback) ->
+    path = @normalizePath path
     url = "#{@urls.revisions}/#{path}"
     params = {}
     if revLimit?
@@ -287,6 +303,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   restore: (path, rev, locale, callback) ->
+    path = @normalizePath path
     url = "#{@urls.restore}/#{path}"
     params = {}
     if rev?
@@ -302,6 +319,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   search: (path, query, fileLimit, includeDeleted, locale, callback) ->
+    path = @normalizePath path
     url = "#{@urls.search}/#{path}"
     params = {query: query}
     if fileLimit?
@@ -319,6 +337,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   shares: (path, locale, shortUrl, callback) ->
+    path = @normalizePath path
     url = "#{@urls.shares}/#{path}"
     params = {}
     if locale?
@@ -334,6 +353,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   media: (path, locale, callback) ->
+    path = @normalizePath path
     url = "#{@urls.media}/#{path}"
     params = {}
     if locale?
@@ -347,6 +367,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   copyRef: (path, callback) ->
+    path = @normalizePath path
     url = "#{@urls.copyRef}/#{path}"
     params = {}
     @oauth.addAuthParams 'GET', url, params
@@ -358,6 +379,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   thumbnails: (path, format, size, callback) ->
+    path = @normalizePath path
     url = "#{@urls.thumbnails}/#{path}"
     params = {}
     if format?
@@ -375,6 +397,8 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   fileopsCopy: (fromPath, toPath, locale, fromCopyRef, callback) ->
+    fromPath = @normalizePath fromPath
+    toPath = @normalizePath toPath
     url = @urls.fileopsCopy
     params = {root: @fileRoot, to_path: toPath}
     if fromPath?
@@ -390,6 +414,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   fileopsCreateFolder: (path, locale, callback) ->
+    path = @normalizePath path
     url = @urls.fileopsCreateFolder
     params = {root: @fileRoot, path: path}
     if locale?
@@ -404,6 +429,7 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   fileopsDelete: (path, locale, callback) ->
+    path = @normalizePath path
     url = @urls.fileopsDelete
     params = {root: @fileRoot, path: path}
     if locale?
@@ -417,6 +443,8 @@ class DropboxClient
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
   fileopsMove: (fromPath, toPath, locale, callback) ->
+    fromPath = @normalizePath fromPath
+    toPath = @normalizePath toPath
     url = @urls.fileopsMove
     params = {root: @fileRoot, from_path: fromPath, to_path: toPath}
     if locale?

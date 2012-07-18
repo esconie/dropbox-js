@@ -2,7 +2,7 @@ describe 'DropboxClient', ->
   beforeEach ->
     @client = new Dropbox.Client testKeys
 
-  describe 'custom API server', ->
+  describe 'URLs for custom API server', ->
     it 'computes the other URLs correctly', ->
       client = new Dropbox.Client
         key: testKeys.key,
@@ -16,6 +16,13 @@ describe 'DropboxClient', ->
       expect(client.fileServer).to.equal(
         'https://api-content.sandbox.dropbox-proxy.com')
 
+  describe 'normalizePath', ->
+    it "doesn't touch relative paths", ->
+      expect(@client.normalizePath('aa/b/cc/dd')).to.equal 'aa/b/cc/dd'
+
+    it 'removes the leading / from absolute paths', ->
+      expect(@client.normalizePath('/aaa/b/cc/dd')).to.equal 'aaa/b/cc/dd'
+
   describe 'authenticate', ->
     it 'completes the flow', (done) ->
       @timeout 15 * 1000  # Time-consuming because the user must click.
@@ -27,11 +34,11 @@ describe 'DropboxClient', ->
 
   describe 'fileopsCreateFolder', ->
     it 'creates a folder', (done) ->
-      @folderName = 'jsapi-tests' + Math.random().toString(36)
+      @folderName = '/jsapi-tests' + Math.random().toString(36)
       @client.fileopsCreateFolder @folderName, undefined, (metadata, error) =>
         expect(error).not.to.be.ok
         metadata = JSON.parse metadata
-        expect(metadata.path).to.equal "/#{@folderName}"
+        expect(metadata.path).to.equal @folderName
         done()
 
   describe 'writeFile', ->
@@ -41,7 +48,7 @@ describe 'DropboxClient', ->
       @client.writeFile filePath, contents, (metadata, error) ->
         expect(error).to.not.be.ok
         metadata = JSON.parse metadata
-        expect(metadata.path).to.equal '/' + filePath
+        expect(metadata.path).to.equal filePath
         done() 
 
   describe 'readFile', ->
@@ -82,7 +89,7 @@ describe 'DropboxClient', ->
       @client.fileopsDelete filePath, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
-        expect(metadata.path).to.equal "/#{filePath}"
+        expect(metadata.path).to.equal filePath
         done()
 
   describe 'revisions', ->
@@ -94,13 +101,13 @@ describe 'DropboxClient', ->
         rev = metadata[1].rev
         @client.restore filePath, rev, undefined, (metadata, error) ->
           metadata = JSON.parse(metadata)
-          expect(metadata.path).to.equal "/#{filePath}"
+          expect(metadata.path).to.equal filePath
           done()
 
   describe 'search', ->
     it 'searches for files', (done) ->
-      folderName = @folderName
-      @client.search '', folderName, undefined, undefined, undefined, (metadata, error) ->
+      folderName = @folderName.substring 1
+      @client.search '/', folderName, undefined, undefined, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
         expect(metadata.length).to.equal 1
@@ -130,7 +137,7 @@ describe 'DropboxClient', ->
       @client.fileopsCopy filePath, "#{filePath}_copy", undefined, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
-        expect(metadata.path).to.equal "/#{filePath}_copy"
+        expect(metadata.path).to.equal "#{filePath}_copy"
         done()
 
   describe 'fileopsMove', ->
@@ -139,7 +146,7 @@ describe 'DropboxClient', ->
       @client.fileopsMove filePath, "#{filePath}_copy2", undefined, (metadata, error) ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
-        expect(metadata.path).to.equal "/#{filePath}_copy2"
+        expect(metadata.path).to.equal "#{filePath}_copy2"
         done()
 
 
@@ -148,5 +155,5 @@ describe 'DropboxClient', ->
       @client.fileopsDelete @folderName, undefined, (metadata, error) =>
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
-        expect(metadata.path).to.equal "/#{@folderName}"
+        expect(metadata.path).to.equal @folderName
         done()
