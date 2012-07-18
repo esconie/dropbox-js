@@ -48,22 +48,31 @@ class DropboxClient
     @
 
   setupUrls: ->
+    @fileRoot = if @sandbox then 'sandbox' else 'dropbox'
+    
     @urls = 
+      # Authentication.
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
       accessToken: "#{@apiServer}/1/oauth/access_token"
-      getFiles: "#{@fileServer}/1/files"
-      putFiles: "#{@fileServer}/1/files_put"
-      postFiles: "#{@fileServer}/1/files"
-      metadata: "#{@apiServer}/1/metadata"
+      
+      # Accounts.
+      accountInfo: "#{@apiServer}/1/account/info"
+      
+      # Files and metadata.
+      getFile: "#{@fileServer}/1/files/#{@fileRoot}"
+      putFile: "#{@fileServer}/1/files_put/#{@fileRoot}"
+      metadata: "#{@apiServer}/1/metadata/#{@fileRoot}"
       delta: "#{@apiServer}/1/delta"
-      revisions: "#{@apiServer}/1/revisions"
-      restore: "#{@apiServer}/1/restore"
-      search: "#{@apiServer}/1/search"
-      shares: "#{@apiServer}/1/shares"
-      media: "#{@apiServer}/1/media"
-      copy_ref: "#{@apiServer}/1/copy_ref"
-      thumbnails: "#{@fileServer}/1/thumbnails"
+      revisions: "#{@apiServer}/1/revisions/#{@fileRoot}"
+      restore: "#{@apiServer}/1/restore/#{@fileRoot}"
+      search: "#{@apiServer}/1/search/#{@fileRoot}"
+      shares: "#{@apiServer}/1/shares/#{@fileRoot}"
+      media: "#{@apiServer}/1/media/#{@fileRoot}"
+      copy_ref: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
+      thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
+      
+      # File operations.
       fileOps: "#{@apiServer}/1/fileops"
       fileOpsCopy: "#{@apiServer}/1/fileops/copy"
       fileOpsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
@@ -145,67 +154,59 @@ class DropboxClient
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
     DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
 
-  # Downloads a file
+  # Retrieves the contents of a file stored in Dropbox.
   #
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {Number} rev of the file to retrive, defaults to the most recent
-  #     revision
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  getFiles: (root, path, rev, callback) ->
-    url = "#{@urls.getFiles}/#{root}/#{path}"
-    params = {}
-    if rev?
-        params = {rev: rev}
-    authorize = @oauth.authHeader 'GET', url, params
-    DropboxXhr.request 'GET', url, params, authorize, callback
+  # @param {String} path the path of the file to be read, relative to the
+  #     user's Dropbox or to the application's folder
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option options {Number} version the desired revision (version number) of
+  #      the file; the default gets the most recent version
+  # @param {function(String, String)} callback called with the result of the
+  #     API call; 
+  readFile: (path, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
 
-  # Uploads a file using PUT semantics
+    url = "#{@urls.getFile}/#{path}"
+    params = {}
+    if options
+      if options.version?
+        params.rev = options.version
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
+
+  # Store a file into a user's Dropbox.
   #
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {Binary} body of the file
-  # @param {String} locale to which to translate the metadata returned on
-  #     successful upload
-  # @param {Boolean} overwrite the existing file at the path (if any)
-  # @param {Number} parent_rev of the uploaded file (i.e. revision of the file
+  # @param {String} path the path of the file to read, relative to the user's
+  #     Dropbox or to the application's folder
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @param {Number?} lastVersion the version of the file that was last read
+  #     by this program; this is used for conflict resolution
+  # @option options {Boolean} noOverwrite if set, the write will not overwrite
+  #      a file with the same name that already exsits; instead a new file name
+  # @param {Binary} data the file's contents
   #     being edited)
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  putFiles: (root, path, body, locale, overwrite, parentRev, callback) ->
-    url = "#{@urls.putFiles}/#{root}/#{path}"
+  writeFile: (path, data, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    url = "#{@urls.putFile}/#{path}"
     params = {}
-    if parentRev?
-        params['parent_rev'] = parentRev
-    if locale?
-        params['locale'] = locale
-    if overwrite?
-        params['overwrite'] = overwrite
-    authorize = @oauth.authHeader 'PUT', url, params
-    DropboxXhr.request 'PUT', url, params, authorize, callback, body
+    if options
+      if options.noOverwrite
+        params.overwrite = 'false'
+      if options.lastVersion?
+          params.parent_rev = options.lastVersion
+    # TODO: locale support would edit the params here
+    @oauth.addAuthParams 'PUT', url, params
+    DropboxXhr.request 'PUT', url, params, null, callback, data
 
-  # Post files
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {Binary} file to be uploaded
-  # @param {String} locale to which to translate the metadata returned on
-  #     successful upload
-  # @param {Boolean} overwrite the existing file at the path (if any)
-  # @param {Number} parent_rev of the uploaded file (i.e. revision of the file
-  #     being edited)
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  postFiles: (root, path, file, locale, overwrite, parent_rev, callback) ->
-    url - "#{@urls.putFiles}/#{root}/#{path}"
-    authorize = @oauth.authHeader 'POST', url, {}
-    null
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
   # @param {String} path to the file you want to retrieve
   # @param {Number} file_limit on the number of files listed. Defaults to
   # 10,000, max is 25,000.
@@ -218,8 +219,8 @@ class DropboxClient
   # @param {String} locale
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  metadata: (root, path, fileLimit, hash, list, includeDeleted, rev, locale, callback) ->
-    url = "#{@urls.metadata}/#{root}/#{path}"  
+  metadata: (path, fileLimit, hash, list, includeDeleted, rev, locale, callback) ->
+    url = "#{@urls.metadata}/#{path}"  
     params = {}
     if fileLimit?
         params['file_limit'] = fileLimit

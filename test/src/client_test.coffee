@@ -25,27 +25,27 @@ describe 'DropboxClient', ->
         expect(uid).to.be.a 'string'
         done()
 
-  describe 'getFiles', ->
+  describe 'readFile', ->
     it 'reads a file from Dropbox', (done) ->
-      @client.getFiles 'dropbox', 'api-test.txt', undefined, (file, error) ->
-        expect(error).to.not.be.ok
-        expect(file).to.equal "This is the api secret\n"
-        done()
+      contents = "This is the api secret\n"
+      @client.writeFile 'api-test.txt', contents, (metadata, error) =>
+        @client.readFile 'api-test.txt', (file, error) ->
+          expect(error).to.not.be.ok
+          expect(file).to.equal "This is the api secret\n"
+          done()
 
-  describe 'putFiles', ->
+  describe 'writeFile', ->
     it 'writes a file to Dropbox', (done) ->
-      callback = (metadata, error) ->
+      contents = 'This is not the api secret'
+      @client.writeFile 'api-write-test.txt', contents, (metadata, error) ->
         expect(error).to.not.be.ok
-        metadata = JSON.parse(metadata)
+        metadata = JSON.parse metadata
         expect(metadata.path).to.equal '/api-write-test.txt'
         done() 
-      @client.putFiles 'dropbox', 'api-write-test.txt',
-                       'This is not the api secret', undefined, true,
-                       undefined, callback
 
   describe 'metadata', ->
     it 'retrieves file metadata', (done) ->
-      @client.metadata 'dropbox', 'api-test.txt', undefined, undefined, undefined, undefined, undefined, undefined, (metadata, error) ->
+      @client.metadata 'api-test.txt', undefined, undefined, undefined, undefined, undefined, undefined, (metadata, error) ->
         metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal '/api-test.txt'
         done()
