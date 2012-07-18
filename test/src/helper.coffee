@@ -17,8 +17,7 @@ else
   exports = window
   
   # TODO: figure out authentication without popups
-  authDriver = new Dropbox.Drivers.Popup()
-
+  authDriver = new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 
 # Common setup
 exports.assert = exports.chai.assert

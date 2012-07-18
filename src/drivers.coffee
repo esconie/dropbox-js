@@ -1,7 +1,16 @@
 # OAuth driver that uses a popup window and postMessage to complete the flow.
 class DropboxPopupDriver
-  constructor: ->
-    @computeUrl()
+  # Sets up a popup-based OAuth driver.
+  #
+  # @param {Object?} options one of the settings below; leave out the argument
+  #     to use the current location for redirecting
+  # @param {String} receiverUrl URL to the page that receives the /authorize
+  #     redirect and performs the postMessage
+  # @param {String} receiverFile the URL to the receiver page will be computed
+  #     by replacing the file name (everything after the last /) of the current
+  #     location with this parameter's value
+  constructor: (options) ->
+    @receiverUrl = @computeUrl options
 
   # Builds a function that can be used as an OAuth driver by Dropbox.Client.
   #
@@ -19,10 +28,21 @@ class DropboxPopupDriver
     @receiverUrl
 
   # Pre-computes the return value of url.
-  computeUrl: ->
-    fragments = window.location.toString().split '/'
-    fragments[fragments.length - 1] = 'oauth_receiver.html'
-    @receiverUrl = fragments.join('/') + '#'
+  computeUrl: (options) ->
+    if options
+      if options.receiverUrl
+        return options.receiverUrl
+      else if options.receiverFile
+        fragments = DropboxPopupDriver.currentLocation().split '/'
+        fragments[fragments.length - 1] = options.receiverFile
+        return fragments.join('/') + '#'
+    DropboxPopupDriver.currentLocation()
+
+  # Wrapper for window.location, for testing purposes.
+  #
+  # @return {String} the current page's URL
+  @currentLocation: ->
+    window.location.toString()
 
   # Creates a popup window.
   #
