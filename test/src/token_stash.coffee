@@ -14,7 +14,7 @@ class TokenStash
     
     @liveLogin (credentials) =>
       unless credentials
-        throw "Dropbox API authorization failed"
+        throw new Error('Dropbox API authorization failed')
 
       @getCache = credentials
       @writeStash credentials

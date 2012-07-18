@@ -10,7 +10,7 @@ else if window?
   # We're in a browser, so add Dropbox to the global namespace.
   window.Dropbox = Dropbox
 else
-  throw 'This library only supports node.js and browser applications.'
+  throw new Error('This library only supports node.js and modern browsers.')
 
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
 Dropbox.Client = DropboxClient

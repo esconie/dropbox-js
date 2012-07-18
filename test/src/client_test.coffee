@@ -29,9 +29,9 @@ describe 'DropboxClient', ->
     it 'reads a file from Dropbox', (done) ->
       contents = "This is the api secret\n"
       @client.writeFile 'api-test.txt', contents, (metadata, error) =>
-        @client.readFile 'api-test.txt', (file, error) ->
+        @client.readFile 'api-test.txt', (data, error) ->
           expect(error).to.not.be.ok
-          expect(file).to.equal "This is the api secret\n"
+          expect(data).to.equal contents
           done()
 
   describe 'writeFile', ->

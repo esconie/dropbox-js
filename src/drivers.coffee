@@ -90,7 +90,7 @@ class DropboxNodeServerDriver
   # Opens the given URL in a browser.
   openBrowser: (url) ->
     unless url.match /^https?:\/\//
-      throw "Not a http/https URL: #{url}"
+      throw new Error("Not a http/https URL: #{url}")
     @open url
 
   # Creates and starts up an HTTP server that will intercept the redirect.
