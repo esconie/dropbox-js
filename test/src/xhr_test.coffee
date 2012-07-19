@@ -1,4 +1,7 @@
 describe 'DropboxXhr', ->
+  beforeEach ->
+    @node_js = module? and module?.exports? and require?
+
   describe '#request', ->
     it 'processes errors correctly', (done) ->
       Dropbox.Xhr.request('POST',
@@ -39,7 +42,7 @@ describe 'DropboxXhr', ->
 
     it 'sends Authorize headers correctly', (done) ->
       # This test only works in node.js due to CORS issues on Dropbox.
-      unless module? and module?.exports? and require?
+      unless @node_js
         return done()
 
       key = testKeys.key

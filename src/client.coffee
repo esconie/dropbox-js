@@ -86,6 +86,17 @@ class DropboxClient
           callback data.uid
     @
 
+  # Retrieves information about the logged in user.
+  #
+  # @params {function(Object?, String?)} callback called with the result of the
+  #     /account/info HTTP request; the first argument is an object; if the
+  #     call fails, the second argument is a string containing the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  getUserInfo: (callback) ->
+    url = @urls.accountInfo
+    params = @oauth.addAuthParams 'GET', url, {}
+    DropboxXhr.request 'GET', url, params, null, callback
+
   # Retrieves the contents of a file stored in Dropbox.
   #
   # @param {String} path the path of the file to be read, relative to the
@@ -138,7 +149,7 @@ class DropboxClient
       callback = options
       options = null
     
-    # Break down the path into a container directory and a file/directory name.
+    # Break down the path into a file/folder name and the containing folder.
     slashIndex = path.lastIndexOf '/'
     if slashIndex is -1
       fileName = path
@@ -173,23 +184,23 @@ class DropboxClient
   #     read, relative to the user's Dropbox or to the application's folder
   # @param {Object?} options the advanced settings below; for the default
   #     settings, skip the argument or pass null
-  # @option {Number} version if set, the call will return the metadata for the
-  #     given revision of the file / directory; the latest version is used by
-  #     default
+  # @option options {Number} version if set, the call will return the metadata
+  #     for the given revision of the file / folder; the latest version is used
+  #     by default
   # @option {Boolean} removed if set to true, this call will also look at files
   #     and folders that were deleted from the user's Dropbox
   # @option options {Boolean, Number} contents only meaningful when stat-ing
   #     folders; if this is set, the API call will also retrieve the
-  #     directory's contents; if this is a number, it specifies the maximum
+  #     folder's contents; if this is a number, it specifies the maximum
   #     number of files/directories that should be returned; the default limit
   #     is 10,000 items; if the limit is exceeded, the call will fail with an
   #     error
   # @option options {String} cacheHash used for saving bandwidth when getting
-  #     a directory's contents; if this value is specified and it matches the
-  #     directory's hash, the call will fail with a 304 (Contents not changed)
-  #     error code; a directory's hash can be obtained from its metadata
+  #     a folder's contents; if this value is specified and it matches the
+  #     folder's hash, the call will fail with a 304 (Contents not changed)
+  #     error code; a folder's hash can be obtained from its metadata
   # @param {function(Object?, String?)} callback called with the result to the
-  #     /metadata HTTP request; the result is a stat of the file / directory;
+  #     /metadata HTTP request; the result is a stat of the file / folder;
   #     if the call fails, the second argument is a string containing the error
   # @return {XMLHttpRequest} the XHR object used for this API call
   stat: (path, options, callback) ->
@@ -218,7 +229,44 @@ class DropboxClient
   metadata: (path, options, callback) ->
     @stat path, options, callback
 
-  # Retrieves the revision history of a file or directory in a user's Dropbox.
+  # Creates a publicly readable URL to a file or folder in the user's Dropbox.
+  #
+  # @param {String} path the path to the file or folder that will be linked to;
+  #     the path is relative to the user's Dropbox or to the application's
+  #     folder
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option options {Boolean} download if set, the URL will be a direct
+  #     download URL, instead of the usual Dropbox preview URLs; direct
+  #     download URLs are short-lived (currently 4 hours), whereas regular URLs
+  #     virtually have no expiration date (currently set to 2030); no didrect
+  #     downlaod URLs can be generated for directories
+  # @option options {Boolean} long if set, the URL will not be shortened using
+  #     Dropbox's shortner; direct download URLs aren't shortened by default
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /shares or /media HTTP request; the result is an Object with the
+  #     properties "url" and "expires; if the call fails, the second argument
+  #     is a string containing the error
+  makeUrl: (path, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+    
+    path = @normalizePath path
+    if options and options.download
+      url = "#{@urls.media}/#{path}"
+    else
+      url = "#{@urls.shares}/#{path}"
+
+    if options and options.long
+      params = { short_url: 'false' }
+    else
+      params = {}
+    # TODO: locale support would edit the params here
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
+
+  # Retrieves the revision history of a file or folder in a user's Dropbox.
   #
   # @param {String} path the path to the file or folder whose revision history
   #     will be retrieved, relative to the user's Dropbox or to the
@@ -281,36 +329,6 @@ class DropboxClient
         params['locale'] = locale
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request 'GET', url, params, null, callback
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  shares: (path, locale, shortUrl, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.shares}/#{path}"
-    params = {}
-    if locale?
-        params['locale'] = locale
-    if shortUrl?
-        params['short_url'] = shortUrl
-    @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request 'POST', url, params, null, callback
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  media: (path, locale, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.media}/#{path}"
-    params = {}
-    if locale?
-        params['locale'] = locale
-    @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request 'POST', url, params, null, callback
 
   # @param {String} root relative to which path is specified. Valid values
   #     are 'sandbox' and 'dropbox'

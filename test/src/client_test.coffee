@@ -1,5 +1,6 @@
 describe 'DropboxClient', ->
   beforeEach ->
+    @node_js = module? and module?.exports? and require?
     @client = new Dropbox.Client testKeys
 
   describe 'URLs for custom API server', ->
@@ -45,7 +46,18 @@ describe 'DropboxClient', ->
       @client.reset()
       @client.authDriver authDriverUrl, authDriver
       @client.authenticate (uid, error) ->
+        expect(error).to.not.be.ok
         expect(uid).to.be.a 'string'
+        done()
+
+  describe 'getUserInfo', ->
+    it 'returns reasonable information', (done) ->
+      @client.getUserInfo (userInfo, error) ->
+        expect(error).to.not.be.ok
+        expect(userInfo).to.have.property 'uid'
+        expect(userInfo.uid.toString()).to.equal testKeys.uid
+        expect(userInfo).to.have.property 'referral_link'
+        expect(userInfo).to.have.property 'display_name'
         done()
 
   describe 'mkdir', ->
@@ -53,6 +65,7 @@ describe 'DropboxClient', ->
       @folderName = '/jsapi-tests' + Math.random().toString(36)
       @client.mkdir @folderName, (metadata, error) =>
         expect(error).not.to.be.ok
+        expect(metadata).to.have.property 'path'
         expect(metadata.path).to.equal @folderName
         done()
 
@@ -62,13 +75,15 @@ describe 'DropboxClient', ->
       contents = "This is the api secret\n"
       @client.writeFile filePath, contents, (metadata, error) ->
         expect(error).to.not.be.ok
+        expect(metadata).to.have.property 'path'
         expect(metadata.path).to.equal filePath
         done() 
 
   describe 'readFile', ->
     it 'reads a file from Dropbox', (done) ->
+      filePath = "#{@folderName}/api-test.txt"
       contents = "This is the api secret\n"
-      @client.readFile 'api-test.txt', (data, error) ->
+      @client.readFile filePath, (data, error) ->
         expect(error).to.not.be.ok
         expect(data).to.equal contents
         done()
@@ -77,6 +92,7 @@ describe 'DropboxClient', ->
     it 'retrieves metadata for a file', (done) ->
       @client.stat 'api-test.txt', (metadata, error) ->
         expect(error).not.to.be.ok
+        expect(metadata).to.have.property 'path'
         expect(metadata.path).to.equal '/api-test.txt'
         done()
 
@@ -96,7 +112,7 @@ describe 'DropboxClient', ->
         expect(metadata.path).to.equal filePath
         done()
 
-  describe 'revisions', ->
+  describe 'history', ->
     it 'gets a list of revisions', (done) ->
       filePath = "#{@folderName}/api-test.txt"
       @client.history filePath, (metadata, error) =>
@@ -114,21 +130,42 @@ describe 'DropboxClient', ->
         expect(metadata.length).to.equal 1
         done()
 
-  describe 'shares', ->
-    it 'returns a dropbox link', (done) ->
+  describe 'makeUrl for a short Web URL', ->
+    it 'returns a shortened Dropbox URL', (done) ->
       filePath = "#{@folderName}/api-test.txt"
-      @client.shares filePath, undefined, undefined, (metadata, error) ->
+      @client.makeUrl filePath, (urlData, error) ->
         expect(error).not.to.be.ok
-        expect(metadata.url).to.be.ok
+        expect(urlData).to.have.property 'url'
+        expect(urlData.url).to.contain '//db.tt/'
         done()
 
-  describe 'media', ->
-    it 'gets a streamable link', (done) ->
+  describe 'makeUrl for a Web URL', ->
+    it 'returns an URL to a preview page', (done) ->
       filePath = "#{@folderName}/api-test.txt"
-      @client.media filePath, undefined, (metadata, error) ->
+      @client.makeUrl filePath, { long: true }, (urlData, error) ->
         expect(error).not.to.be.ok
-        expect(metadata.url).to.be.ok
-        done()
+        expect(urlData).to.have.property 'url'
+        
+        # The contents server does not return CORS headers.
+        return done() unless @nodejs
+        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (data, error) ->
+          expect(error).not.to.be.ok
+          expect(data).to.contain '<!DOCTYPE html>'
+          done()
+
+  describe 'makeUrl for a direct download URL', ->
+    it 'gets a direct download URL', (done) ->
+      filePath = "#{@folderName}/api-test.txt"
+      @client.makeUrl filePath, { download: true }, (urlData, error) ->
+        expect(error).not.to.be.ok
+        expect(urlData).to.have.property 'url'
+
+        # The contents server does not return CORS headers.
+        return done() unless @nodejs
+        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (data, error) ->
+          expect(error).not.to.be.ok
+          expect(data).to.equal "This is the api secret\n"
+          done()
 
   describe 'delta', ->
     it 'gets a list of changes', (done) ->
