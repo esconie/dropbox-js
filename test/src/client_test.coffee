@@ -53,7 +53,6 @@ describe 'DropboxClient', ->
       @folderName = '/jsapi-tests' + Math.random().toString(36)
       @client.mkdir @folderName, (metadata, error) =>
         expect(error).not.to.be.ok
-        metadata = JSON.parse metadata
         expect(metadata.path).to.equal @folderName
         done()
 
@@ -63,7 +62,6 @@ describe 'DropboxClient', ->
       contents = "This is the api secret\n"
       @client.writeFile filePath, contents, (metadata, error) ->
         expect(error).to.not.be.ok
-        metadata = JSON.parse metadata
         expect(metadata.path).to.equal filePath
         done() 
 
@@ -79,7 +77,6 @@ describe 'DropboxClient', ->
     it 'retrieves metadata for a file', (done) ->
       @client.stat 'api-test.txt', (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal '/api-test.txt'
         done()
 
@@ -88,7 +85,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.history filePath, (versions, error) ->
         expect(error).not.to.be.ok
-        versions = JSON.parse(versions)
         expect(versions).to.have.length 1
         done()
 
@@ -97,7 +93,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.remove filePath, (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal filePath
         done()
 
@@ -106,10 +101,8 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.history filePath, (metadata, error) =>
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         rev = metadata[1].rev
         @client.restore filePath, rev, undefined, (metadata, error) ->
-          metadata = JSON.parse(metadata)
           expect(metadata.path).to.equal filePath
           done()
 
@@ -118,7 +111,6 @@ describe 'DropboxClient', ->
       folderName = @folderName.substring 1
       @client.search '/', folderName, undefined, undefined, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.length).to.equal 1
         done()
 
@@ -127,7 +119,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.shares filePath, undefined, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.url).to.be.ok
         done()
 
@@ -136,7 +127,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.media filePath, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.url).to.be.ok
         done()
 
@@ -144,7 +134,6 @@ describe 'DropboxClient', ->
     it 'gets a list of changes', (done) ->
       @client.delta undefined, undefined, (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         done()
 
   describe 'copy', ->
@@ -152,7 +141,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.copy filePath, "#{filePath}_copy", (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal "#{filePath}_copy"
         done()
 
@@ -161,7 +149,6 @@ describe 'DropboxClient', ->
       filePath = "#{@folderName}/api-test.txt"
       @client.move filePath, "#{filePath}_copy2", (metadata, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal "#{filePath}_copy2"
         done()
 
@@ -170,6 +157,5 @@ describe 'DropboxClient', ->
     it 'deletes a folder', (done) ->
       @client.remove @folderName, (metadata, error) =>
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal @folderName
         done()

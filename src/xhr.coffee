@@ -143,7 +143,7 @@ class DropboxXhr
       switch xhr.getResponseHeader('Content-Type')
          when 'application/x-www-form-urlencoded'
            callback DropboxXhr.urlDecode(response)
-         when 'application/json'
+         when 'application/json', 'text/javascript'
            callback JSON.parse(response)
          else
             callback response
