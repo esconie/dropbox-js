@@ -10,7 +10,6 @@ task 'test', ->
     build ->
       token ->
         run 'mocha --colors --require test/js/helper.js test/js/*test.js'
-        run 'open test/browser_test.html'
 
 task 'webtest', ->
   vendor ->

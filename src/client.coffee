@@ -39,46 +39,6 @@ class DropboxClient
     @authDriverUrl = url
     @authDriver = driver
 
-  # Removes all login information.
-  #
-  # @return {Dropbox.Client} this, for easy call chaining
-  reset: ->
-    @uid = null
-    @oauth.setToken null, ''
-    @
-
-  setupUrls: ->
-    @fileRoot = if @sandbox then 'sandbox' else 'dropbox'
-    
-    @urls = 
-      # Authentication.
-      requestToken: "#{@apiServer}/1/oauth/request_token"
-      authorize: "#{@authServer}/1/oauth/authorize"
-      accessToken: "#{@apiServer}/1/oauth/access_token"
-      
-      # Accounts.
-      accountInfo: "#{@apiServer}/1/account/info"
-      
-      # Files and metadata.
-      getFile: "#{@fileServer}/1/files/#{@fileRoot}"
-      postFile: "#{@fileServer}/1/files/#{@fileRoot}"
-      putFile: "#{@fileServer}/1/files_put/#{@fileRoot}"
-      metadata: "#{@apiServer}/1/metadata/#{@fileRoot}"
-      delta: "#{@apiServer}/1/delta"
-      revisions: "#{@apiServer}/1/revisions/#{@fileRoot}"
-      restore: "#{@apiServer}/1/restore/#{@fileRoot}"
-      search: "#{@apiServer}/1/search/#{@fileRoot}"
-      shares: "#{@apiServer}/1/shares/#{@fileRoot}"
-      media: "#{@apiServer}/1/media/#{@fileRoot}"
-      copy_ref: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
-      thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
-      
-      # File operations.
-      fileopsCopy: "#{@apiServer}/1/fileops/copy"
-      fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
-      fileopsDelete: "#{@apiServer}/1/fileops/delete"
-      fileopsMove: "#{@apiServer}/1/fileops/move" 
-
   # OAuth credentials.
   #
   # @return {Object} a plain object whose properties can be passed to the
@@ -121,38 +81,6 @@ class DropboxClient
           @oauth.setToken token, tokenSecret
           @uid = data.uid
           callback data.uid
-
-  # Really low-level call to /oauth/request_token
-  #
-  # This a low-level method called by authorize. Users should call authorize.
-  #
-  # @param {function(data, error)} callback called with the result to the
-  #    /oauth/request_token HTTP request
-  requestToken: (callback) ->
-    params = @oauth.addAuthParams 'POST', @urls.requestToken, {}
-    DropboxXhr.request 'POST', @urls.requestToken, params, null, callback
-  
-  # The URL for /oauth/authorize, embedding the user's token.
-  #
-  # This a low-level method called by authorize. Users should call authorize.
-  #
-  # @param {String} token the oauth_token obtained from an /oauth/request_token
-  #     call
-  # @return {String} the URL that the user's browser should be redirected to
-  #     in order to perform an /oauth/authorize request
-  authorizeUrl: (token) ->
-    params = { oauth_token: token, oauth_callback: @authDriverUrl }
-    "#{@urls.authorize}?" + DropboxXhr.urlEncode(params)
-
-  # Exchanges an OAuth request token with an access token.
-  #
-  # This a low-level method called by authorize. Users should call authorize.
-  #
-  # @param {function(data, error)} callback called with the result to the
-  #    /oauth/access_token HTTP request
-  getAccessToken: (callback) ->
-    params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
-    DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
 
   # Retrieves the contents of a file stored in Dropbox.
   #
@@ -225,18 +153,6 @@ class DropboxClient
       fileName: fileName
       contentType: 'application/octet-stream'
     DropboxXhr.multipartRequest url, fileField, params, null, callback
-
-  # Normalizes a Dropbox path for API requests.
-  #
-  # This is an internal method. It is used by all the client methods that take
-  # paths as arguments.
-  #
-  # @param {String} path a path 
-  normalizePath: (path) ->
-    if path.substring(0, 1) is '/'
-      path.substring 1
-    else
-      path
 
   # @param {String} path to the file you want to retrieve
   # @param {Number} file_limit on the number of files listed. Defaults to
@@ -389,65 +305,205 @@ class DropboxClient
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request 'GET', url, params, null, callback
 
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {Number} rev of the file to retrive, defaults to the most recent
-  #     revision
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  fileopsCopy: (fromPath, toPath, locale, fromCopyRef, callback) ->
-    fromPath = @normalizePath fromPath
-    toPath = @normalizePath toPath
-    url = @urls.fileopsCopy
-    params = {root: @fileRoot, to_path: toPath}
-    if fromPath?
-        params['from_path'] = fromPath
-    else if fromCopyRef?
-        params['from_copy_ref'] = fromCopyRef
-    if locale?
-        params['locale'] = locale
-    @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request 'POST', url, params, null, callback
-
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  fileopsCreateFolder: (path, locale, callback) ->
-    path = @normalizePath path
+  # Creates a folder in a user's Dropbox.
+  #
+  # @param {String} path the path of the folder that will be created, relative
+  #     to the user's Dropbox or to the application's folder
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /fileops/create_folder HTTP request; the result is a stat of the
+  #     folder; if the call fails, the second argument is a string containing
+  #     the error
+  mkdir: (path, callback) ->
     url = @urls.fileopsCreateFolder
-    params = {root: @fileRoot, path: path}
-    if locale?
-        params['locale'] = locale
+    params = { root: @fileRoot, path: @normalizePath(path) }
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
-    
 
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to delete
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  fileopsDelete: (path, locale, callback) ->
-    path = @normalizePath path
+  # Removes a file or diretory from a user's Dropbox.
+  #
+  # @param {String} path the path of the file to be read, relative to the
+  #     user's Dropbox or to the application's folder
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /fileops/delete HTTP request; the result is a stat of the deleted
+  #     folder; if the call fails, the second argument is a string containing
+  #     the error
+  remove: (path, callback) ->
     url = @urls.fileopsDelete
-    params = {root: @fileRoot, path: path}
-    if locale?
-        params['locale'] = locale
+    params = { root: @fileRoot, path: @normalizePath(path)  }
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
 
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
+  # Copies a file or directory in the user's Dropbox.
+  #
+  # This method's "from" parameter can be either a path or a copy reference
+  # obtained by a previous call to makeCopyRef. The method uses a crude
+  # heuristic to interpret the "from" string -- if it doesn't contain any
+  # slash (/) or dot (.) character, it is assumed to be a copy reference. The
+  # easiest way to work with it is to prepend "/" to every path passed to the
+  # method. The method will process paths that start with multiple /s
+  # correctly.
+  #
+  # @param {String} from the path of the file or folder that will be copied,
+  #     or a reference obtained by calling makeCopyRef; if this is a path, it
+  #     is relative to the user's Dropbox or to the application's folder
+  # @param {String} toPath the path that the file or folder will have after
+  #     the method call; the path is relative to the user's Dropbox or to the
+  #     application folder
+  # @param {Object?} options the advanced setting below
+  # @option options {Boolean} copyRef if present, overrides the copy reference
+  #     detection heuristic; the value is used directly to decide how to
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /fileops/copy HTTP request; the result is a stat of the file or
+  #     directory created by the copy operation; if the call fails, the second
+  #     argument is a string containing the error
+  copy: (from, toPath, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+    
+    if options and options.copyRef?
+      copyRefOption = true
+      forceCopyRef = options.copyRef
+    else
+      copyRefOption = false
+      forceCopyRef = false
+    
+    params = { root: @fileRoot, to_path: @normalizePath(toPath) }
+    if forceCopyRef or (not copyRefOption and @isCopyRef(from))
+      params.from_copy_ref = from
+    else
+      params.from_path = @normalizePath from
+    # TODO: locale support would edit the params here
+
+    url = @urls.fileopsCopy
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request 'POST', url, params, null, callback
+
+  # Moves a file or directory to a different location in a user's Dropbox.
+  #
+  # @param {String} fromPath the path of the file or folder that will be moved,
+  #     relative to the user's Dropbox or to the application's folder
+  # @param {String} toPath the path that the file or folder will have after
+  #     the method call; the path is relative to the user's Dropbox or to the
+  #     application's folder
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  fileopsMove: (fromPath, toPath, locale, callback) ->
+  move: (fromPath, toPath, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+    
     fromPath = @normalizePath fromPath
     toPath = @normalizePath toPath
     url = @urls.fileopsMove
     params = {root: @fileRoot, from_path: fromPath, to_path: toPath}
-    if locale?
-        params['locale'] = locale
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
+
+  # Removes all login information.
+  #
+  # @return {Dropbox.Client} this, for easy call chaining
+  reset: ->
+    @uid = null
+    @oauth.setToken null, ''
+    @
+
+  # Computes the URLs of all the Dropbox API calls.
+  #
+  # @private
+  # This is called by the constructor, and used by the other methods. It should
+  # not be used directly.
+  setupUrls: ->
+    @fileRoot = if @sandbox then 'sandbox' else 'dropbox'
+    
+    @urls = 
+      # Authentication.
+      requestToken: "#{@apiServer}/1/oauth/request_token"
+      authorize: "#{@authServer}/1/oauth/authorize"
+      accessToken: "#{@apiServer}/1/oauth/access_token"
+      
+      # Accounts.
+      accountInfo: "#{@apiServer}/1/account/info"
+      
+      # Files and metadata.
+      getFile: "#{@fileServer}/1/files/#{@fileRoot}"
+      postFile: "#{@fileServer}/1/files/#{@fileRoot}"
+      putFile: "#{@fileServer}/1/files_put/#{@fileRoot}"
+      metadata: "#{@apiServer}/1/metadata/#{@fileRoot}"
+      delta: "#{@apiServer}/1/delta"
+      revisions: "#{@apiServer}/1/revisions/#{@fileRoot}"
+      restore: "#{@apiServer}/1/restore/#{@fileRoot}"
+      search: "#{@apiServer}/1/search/#{@fileRoot}"
+      shares: "#{@apiServer}/1/shares/#{@fileRoot}"
+      media: "#{@apiServer}/1/media/#{@fileRoot}"
+      copy_ref: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
+      thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
+      
+      # File operations.
+      fileopsCopy: "#{@apiServer}/1/fileops/copy"
+      fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
+      fileopsDelete: "#{@apiServer}/1/fileops/delete"
+      fileopsMove: "#{@apiServer}/1/fileops/move" 
+
+  # Normalizes a Dropbox path for API requests.
+  #
+  # @private
+  # This is an internal method. It is used by all the client methods that take
+  # paths as arguments.
+  #
+  # @param {String} path a path 
+  normalizePath: (path) ->
+    if path.substring(0, 1) is '/'
+      i = 1
+      while path.substring(i, i + 1) is '/'
+        i += 1
+      path.substring i
+    else
+      path
+
+  # Heuristic for figuring out whether a string is a path or a copyref.
+  #
+  # @private
+  # This is an internal method. It is used by all the client methods that can
+  # take either a path or a copyRef as an argument.
+  #
+  # @param
+  isCopyRef: (pathOrCopyRef) ->
+    pathOrCopyRef.indexOf('/') is -1 and pathOrCopyRef.indexOf('.') is -1
+
+  # Really low-level call to /oauth/request_token
+  #
+  # @private
+  # This a low-level method called by authorize. Users should call authorize.
+  #
+  # @param {function(data, error)} callback called with the result to the
+  #    /oauth/request_token HTTP request
+  requestToken: (callback) ->
+    params = @oauth.addAuthParams 'POST', @urls.requestToken, {}
+    DropboxXhr.request 'POST', @urls.requestToken, params, null, callback
+  
+  # The URL for /oauth/authorize, embedding the user's token.
+  #
+  # @private
+  # This a low-level method called by authorize. Users should call authorize.
+  #
+  # @param {String} token the oauth_token obtained from an /oauth/request_token
+  #     call
+  # @return {String} the URL that the user's browser should be redirected to
+  #     in order to perform an /oauth/authorize request
+  authorizeUrl: (token) ->
+    params = { oauth_token: token, oauth_callback: @authDriverUrl }
+    "#{@urls.authorize}?" + DropboxXhr.urlEncode(params)
+
+  # Exchanges an OAuth request token with an access token.
+  #
+  # @private
+  # This a low-level method called by authorize. Users should call authorize.
+  #
+  # @param {function(data, error)} callback called with the result to the
+  #    /oauth/access_token HTTP request
+  getAccessToken: (callback) ->
+    params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
+    DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
+
+
