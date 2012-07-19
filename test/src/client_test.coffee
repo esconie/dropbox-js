@@ -75,28 +75,21 @@ describe 'DropboxClient', ->
         expect(data).to.equal contents
         done()
 
-  describe 'metadata', ->
-    it 'retrieves file metadata', (done) ->
-      @client.metadata 'api-test.txt', undefined, undefined, undefined, undefined, undefined, undefined, (metadata, error) ->
+  describe 'stat', ->
+    it 'retrieves metadata for a file', (done) ->
+      @client.stat 'api-test.txt', (metadata, error) ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
         expect(metadata.path).to.equal '/api-test.txt'
         done()
 
-  describe 'revisions', ->
+  describe 'history', ->
     it 'gets a list of revisions', (done) ->
       filePath = "#{@folderName}/api-test.txt"
-      @client.revisions filePath, undefined, undefined, (metadata, error) ->
+      @client.history filePath, (versions, error) ->
         expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
-        expect(metadata.length).to.equal 1
-        done()
-
-  describe 'delta', ->
-    it 'gets a list of changes', (done) ->
-      @client.delta undefined, undefined, (metadata, error) ->
-        expect(error).not.to.be.ok
-        metadata = JSON.parse(metadata)
+        versions = JSON.parse(versions)
+        expect(versions).to.have.length 1
         done()
 
   describe 'restore', ->
@@ -111,7 +104,7 @@ describe 'DropboxClient', ->
   describe 'revisions', ->
     it 'gets a list of revisions', (done) ->
       filePath = "#{@folderName}/api-test.txt"
-      @client.revisions filePath, undefined, undefined, (metadata, error) =>
+      @client.history filePath, (metadata, error) =>
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
         rev = metadata[1].rev
@@ -145,6 +138,13 @@ describe 'DropboxClient', ->
         expect(error).not.to.be.ok
         metadata = JSON.parse(metadata)
         expect(metadata.url).to.be.ok
+        done()
+
+  describe 'delta', ->
+    it 'gets a list of changes', (done) ->
+      @client.delta undefined, undefined, (metadata, error) ->
+        expect(error).not.to.be.ok
+        metadata = JSON.parse(metadata)
         done()
 
   describe 'copy', ->

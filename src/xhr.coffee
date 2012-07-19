@@ -1,12 +1,15 @@
 if window?
-  XMLHttpRequest = window.XMLHttpRequest  
+  DropboxXhrRequest = window.XMLHttpRequest  
   # TODO: XDomain for CORS on IE <= 9
 else
   # Node.js needs an adapter for the XHR API.
-  XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
+  DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
 
-# Dispatches low-level XmlHttpRequests
+# Dispatches low-level AJAX calls (XmlHttpRequests).
 class DropboxXhr
+  # The object used to perform XHR requests.
+  @Request = DropboxXhrRequest
+
   # Send off an AJAX request.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
@@ -20,6 +23,7 @@ class DropboxXhr
   #     successful requests set the first parameter to an object containing the
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
+  # @return {XMLHttpRequest} the XHR object used for this request
   @request: (method, url, params, authHeader, callback) ->
     if method is 'GET'
       url = [url, '?', DropboxXhr.urlEncode(params)].join ''
@@ -32,7 +36,6 @@ class DropboxXhr
     else
       body = null
     @xhrRequest method, url, headers, body, callback
-    null
 
   # Upload a file via a mulitpart/form-data method.
   # 
@@ -52,6 +55,7 @@ class DropboxXhr
   #     successful requests set the first parameter to an object containing the
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
+  # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
     url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     
@@ -80,9 +84,10 @@ class DropboxXhr
 
   # Implementation for request and multipartRequest.
   #
-  # @param {Boolean} binaryBody
+  # @see request, multipartRequest
+  # @return {XMLHttpRequest} the XHR object created for this request
   @xhrRequest: (method, url, headers, body, callback) ->
-    xhr = new XMLHttpRequest()
+    xhr = new @Request()
     xhr.open method, url, true
     for own header, value of headers
       xhr.setRequestHeader header, value
@@ -91,8 +96,7 @@ class DropboxXhr
       xhr.send body
     else
       xhr.send()
-    null
-
+    xhr
 
   # Encodes an associative array (hash) into a x-www-form-urlencoded String.
   #
