@@ -106,6 +106,7 @@ class DropboxClient
   # @option options {Number} version the desired revision (version number) of
   #      the file; the default gets the most recent version
   # @option options {Number} rev alias for "version" that matches the HTTP API
+  # @option options {Boolean} fetchBinary get a binary file, defaults to false
   # @param {function(String?, String?)} callback called with the result of the
   #     /files (GET) HTTP request; the first argument is the contents of the
   #     file; if the call fails, the second argument is a string containing the
@@ -118,15 +119,18 @@ class DropboxClient
 
     path = @normalizePath path
     url = "#{@urls.getFile}/#{path}"
+    fetchBinary = false
     params = {}
     if options
       if options.version?
         params.rev = options.version
       else if options.rev?
         params.rev = options.rev
+      if options.fetchBinary?
+        fetchBinary = options.fetchBinary
     @oauth.addAuthParams 'GET', url, params
     # TODO: read the metadata from the x-dropbox-metadata header
-    DropboxXhr.request 'GET', url, params, null, callback
+    DropboxXhr.request 'GET', url, params, null, callback, fetchBinary
 
   # Store a file into a user's Dropbox.
   #
@@ -149,26 +153,36 @@ class DropboxClient
       callback = options
       options = null
     
-    # Break down the path into a file/folder name and the containing folder.
-    slashIndex = path.lastIndexOf '/'
-    if slashIndex is -1
-      fileName = path
-      path = ''
+    if Buffer? and typeof data is 'object'
+      url = "#{@urls.putFile}/#{@normalizePath(path)}"
+      params = {}
+      method = "PUT"
     else
-      fileName = path.substring slashIndex
-      path = path.substring 0, slashIndex
+      # Break down the path into a file/folder name and the containing folder.
+      slashIndex = path.lastIndexOf '/'
+      if slashIndex is -1
+        fileName = path
+        path = ''
+      else
+        fileName = path.substring slashIndex
+        path = path.substring 0, slashIndex
 
-    url = "#{@urls.postFile}/#{@normalizePath(path)}"
-    params = { file: fileName }
+      url = "#{@urls.postFile}/#{@normalizePath(path)}"
+      params = { file: fileName }
+      method = "POST"
     if options
       if options.noOverwrite
         params.overwrite = 'false'
       if options.lastVersion?
           params.parent_rev = options.lastVersion
     # TODO: locale support would edit the params here
-    @oauth.addAuthParams 'POST', url, params
+    @oauth.addAuthParams method, url, params
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
     #       signing the request; the code below works as intended
+    if Buffer? and typeof(data) is 'object'
+      url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+      return DropboxXhr.xhrRequest method, url, {}, data, callback
+
     delete params.file
     
     fileField =

@@ -24,7 +24,7 @@ class DropboxXhr
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
   # @return {XMLHttpRequest} the XHR object used for this request
-  @request: (method, url, params, authHeader, callback) ->
+  @request: (method, url, params, authHeader, callback, fetchBinary) ->
     if method is 'GET'
       url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     headers = {}
@@ -35,7 +35,7 @@ class DropboxXhr
       body = DropboxXhr.urlEncode params
     else
       body = null
-    @xhrRequest method, url, headers, body, callback
+    @xhrRequest method, url, headers, body, callback, fetchBinary
 
   # Upload a file via a mulitpart/form-data method.
   # 
@@ -58,21 +58,24 @@ class DropboxXhr
   # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
     url = [url, '?', DropboxXhr.urlEncode(params)].join ''
-    
-    fileType = fileField.contentType or 'application/octet-stream'
-    boundary = @multipartBoundary()
-    body = ['--', boundary, "\r\n",
-            'Content-Disposition: form-data; name="', fileField.name,
-                '"; filename="', fileField.fileName, "\"\r\n",
-            'Content-Type: ', fileType, "\r\n",
-            "Content-Transfer-Encoding: binary\r\n\r\n",
-            fileField.value, "\r\n",
-            '--', boundary, '--', "\r\n"].join ''
-
-    headers = { 'Content-Type': "multipart/form-data; boundary=#{boundary}" }
+    if typeof fileField.value is 'string'
+      fileType = fileField.contentType or 'application/octet-stream'
+      boundary = @multipartBoundary()
+      headers = { 'Content-Type': "multipart/form-data; boundary=#{boundary}" }
+      body = ['--', boundary, "\r\n",
+              'Content-Disposition: form-data; name="', fileField.name,
+                  '"; filename="', fileField.fileName, "\"\r\n",
+              'Content-Type: ', fileType, "\r\n",
+              "Content-Transfer-Encoding: binary\r\n\r\n",
+              fileField.value,
+              "\r\n", '--', boundary, '--', "\r\n"].join ''
+    else if FormData?
+      headers = {}
+      body = new FormData()
+      console.log fileField.fileName
+      body.append(fileField.name, fileField.value, fileField.fileName)
     if authHeader
       headers['Authorization'] = authHeader
-
     @xhrRequest 'POST', url, headers, body, callback
 
   # Generates a bounday suitable for separating multipart data.
@@ -86,9 +89,11 @@ class DropboxXhr
   #
   # @see request, multipartRequest
   # @return {XMLHttpRequest} the XHR object created for this request
-  @xhrRequest: (method, url, headers, body, callback) ->
+  @xhrRequest: (method, url, headers, body, callback, fetchBinary) ->
     xhr = new @Request()
-    xhr.open method, url, true
+    xhr.open method, url, true, null, null, fetchBinary
+    if fetchBinary
+      xhr.responseType = "blob"
     for own header, value of headers
       xhr.setRequestHeader header, value
     xhr.onreadystatechange = -> DropboxXhr.onReadyStateChange(xhr, callback)
@@ -136,7 +141,10 @@ class DropboxXhr
   # Handles the XHR readystate event.
   @onReadyStateChange: (xhr, callback) ->
     if xhr.readyState is 4  # XMLHttpRequest.DONE is 4
-      response = xhr.responseText
+      if xhr.responseType is 'blob'
+        response = xhr.response
+      else
+        response = xhr.responseText
       if xhr.status < 200 or xhr.status >= 300
         callback null, "Dropbox API error #{xhr.status}. #{response}"
         return

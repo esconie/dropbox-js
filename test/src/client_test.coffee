@@ -88,6 +88,34 @@ describe 'DropboxClient', ->
         expect(data).to.equal contents
         done()
 
+  describe 'readFile', ->
+    it 'reads binary data correctly', (done) ->
+      filename = "js-api-test.gif"
+      @client.readFile filename, {'fetchBinary': true}, (data, error) =>
+        expect(error).to.not.be.ok
+        if document?
+          img = document?.createElement('img')
+          img?.src = window.webkitURL?.createObjectURL(data)
+          document?.body.appendChild(img)
+        else
+          require('fs').writeFileSync('/Users/aakanksha/Pictures/pic.gif', data, 'binary')
+        @client.writeFile filename, data, (metadata, error) ->
+          expect(error).to.not.be.ok
+          done()
+
+  describe 'writeFile', ->
+    it 'writes image to the server correctly', (done) ->
+      filename = "/Users/aakanksha/Pictures/Bonsai.gif"
+      if not require?('fs')?
+        done()
+      data = require('fs').readFileSync(filename)
+      filePath = "/bonsaisss.gif"
+      @client.writeFile filePath, data, (metadata, error) ->
+        expect(error).to.not.be.ok
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal filePath
+        done()
+
   describe 'stat', ->
     it 'retrieves metadata for a file', (done) ->
       @client.stat 'api-test.txt', (metadata, error) ->
